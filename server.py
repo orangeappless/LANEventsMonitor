@@ -4,7 +4,7 @@
 import sys
 import argparse
 import socket
-from _thread import *
+import threading
 
 
 thread_count = 0        # Track number of threads/clients
@@ -69,7 +69,7 @@ def main():
             client, addr = socket_.accept()
             print(f"[Connected] {addr[0]}: {str(addr[1])}")
 
-            start_new_thread(handle_client, (client, ))
+            threading.Thread(target=handle_client, args=(client, )).start()
             thread_count += 1
             print(f"Number of threads/clients: {str(thread_count)}")
         except:
