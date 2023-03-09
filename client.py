@@ -63,7 +63,7 @@ def main():
 
     # Add watcher for each directory listed in config file
     watcher_dirs = dict(configs.items("WATCHER_DIRS"))
-    watcher.start_watcher(watcher_dirs)
+    watcher.start_watcher(watcher_dirs, socket_)
     
 
     # while True:
@@ -73,7 +73,7 @@ def main():
     #     res = socket_.recv(4096)
     #     print(res.decode("utf-8"))
 
-    socket_.close()
+    # socket_.close()
 
 
 if __name__ == "__main__":

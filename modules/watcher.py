@@ -1,23 +1,41 @@
 import pyinotify
+import socket
+from datetime import datetime
 
 
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
         # Creation in directory
-        print("Created:", event.pathname)
+        notification = f"Created: {event.pathname}"
+        print(notification)
+        self.send_notif(notification)
 
     def process_IN_DELETE(self, event):
         # Deletion in directory
-        print("Deleted:", event.pathname)
+        notification = f"Deleted: {event.pathname}"
+        print(notification)
+        self.send_notif(notification)
 
     def process_IN_CLOSE_WRITE(self, event):
         # Change in file in directory
-        print("Modified:", event.pathname)
+        notification = f"Modified: {event.pathname}"
+        print(notification)
+        self.send_notif(notification)
+
+    def send_notif(self, notification):
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        data = f"[{current_time}] {notification}"
+
+        socket_.send(data.encode("utf-8"))
 
 
-def start_watcher(directories):
+def start_watcher(directories, socket):
+    # Socket object, used to send notifications to server
+    global socket_
+    socket_ = socket
+
     watch_manager = pyinotify.WatchManager()
-    mask = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_MODIFY | pyinotify.IN_CLOSE_WRITE | pyinotify.IN_CLOSE_NOWRITE
+    mask = pyinotify.IN_CREATE | pyinotify.IN_DELETE | pyinotify.IN_CLOSE_WRITE
     
     notifier = pyinotify.ThreadedNotifier(watch_manager, EventHandler())
 

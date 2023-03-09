@@ -31,6 +31,7 @@ def handle_client(socket):
 
     while True:
         data = socket.recv(4096)
+        print(data.decode("utf-8"))
 
         response = "Server echo: " + data.decode("utf-8")
 
