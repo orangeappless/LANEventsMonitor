@@ -6,7 +6,7 @@ import argparse
 import socket
 import configparser
 
-from modules import watcher
+from modules import dir_watcher
 
 
 def parse_args():
@@ -63,7 +63,7 @@ def main():
 
     # Add watcher for each directory listed in config file
     watcher_dirs = dict(configs.items("WATCHER_DIRS"))
-    watcher.start_watcher(watcher_dirs, socket_)
+    dir_watcher.start_watcher(watcher_dirs, socket_)
     
 
     # while True:
