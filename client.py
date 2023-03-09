@@ -4,6 +4,9 @@
 import sys
 import argparse
 import socket
+import configparser
+
+from modules import watcher
 
 
 def parse_args():
@@ -27,9 +30,20 @@ def parse_args():
     return args
 
 
+def parse_config(config_file_path):
+    config_parser = configparser.RawConfigParser()
+    config_parser.read(config_file_path)
+    
+    return config_parser
+
+
 def main():
     # Get command line args
     args = parse_args()
+
+    # Parse config file
+    config_file = "config.ini"
+    configs = parse_config(config_file)
 
     # Connect to server
     socket_ = socket.socket()
@@ -47,14 +61,19 @@ def main():
     res = socket_.recv(4096)
     print(res.decode("utf-8"))
 
-    while True:
-        data = input("> ")
-        socket_.send(str.encode(data))
+    # Add watcher for each directory listed in config file
+    watcher_dirs = dict(configs.items("WATCHER_DIRS"))
+    watcher.start_watcher(watcher_dirs, socket_)
     
-        res = socket_.recv(4096)
-        print(res.decode("utf-8"))
 
-    socket_.close()
+    # while True:
+    #     data = input("> ")
+    #     socket_.send(str.encode(data))
+    
+    #     res = socket_.recv(4096)
+    #     print(res.decode("utf-8"))
+
+    # socket_.close()
 
 
 if __name__ == "__main__":
