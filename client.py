@@ -2,32 +2,12 @@
 
 
 import sys
-import argparse
 import socket
 import configparser
+from multiprocessing import Process
 
 from modules import dir_watcher
-
-
-def parse_args():
-    # Parse command line args
-    parser = argparse.ArgumentParser()
-
-    parser.add_argument("-s",
-                        "--server",
-                        type=str,
-                        help="IP of remote server",
-                        required=True)
-
-    parser.add_argument("-p",
-                        "--port",
-                        type=int,
-                        help="Port of remote server",
-                        required=True)
-
-    args = parser.parse_args()
-
-    return args
+from modules import user_watcher
 
 
 def parse_config(config_file_path):
@@ -38,17 +18,14 @@ def parse_config(config_file_path):
 
 
 def main():
-    # Get command line args
-    args = parse_args()
-
     # Parse config file
     config_file = "config.ini"
     configs = parse_config(config_file)
 
     # Connect to server
     socket_ = socket.socket()
-    server = args.server
-    port = args.port
+    server = str(dict(configs.items('CLIENT_CONF'))['server_ip'])
+    port = int(dict(configs.items('CLIENT_CONF'))['server_port'])
 
     print("Connecting...")
 
@@ -64,6 +41,11 @@ def main():
     # Add watcher for each directory listed in config file
     watcher_dirs = dict(configs.items("WATCHER_DIRS"))
     dir_watcher.start_watcher(watcher_dirs, socket_)
+
+    # Monitor user files
+    audit_log_file = dict(configs.items('USER_FILES'))['audit_log']
+    user_watcher.start_user_watcher(audit_log_file, socket_)
+
     
 
     # while True:
