@@ -5,8 +5,10 @@ import sys
 import argparse
 import socket
 import configparser
+from multiprocessing import Process
 
 from modules import dir_watcher
+from modules import user_watcher
 
 
 def parse_args():
@@ -62,8 +64,14 @@ def main():
     print(res.decode("utf-8"))
 
     # Add watcher for each directory listed in config file
-    watcher_dirs = dict(configs.items("WATCHER_DIRS"))
-    dir_watcher.start_watcher(watcher_dirs, socket_)
+    # watcher_dirs = dict(configs.items("WATCHER_DIRS"))
+    # dir_watcher.start_watcher(watcher_dirs, socket_)
+
+    # Monitor user files
+    # audit_log_file = dict(configs.items('USER_FILES'))
+    audit_log_file = dict(configs.items('USER_FILES'))['audit_log']
+    user_watcher.start_user_watcher(audit_log_file, socket_)
+
     
 
     # while True:
