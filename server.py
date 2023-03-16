@@ -30,7 +30,11 @@ def handle_client(socket):
     socket.send(str.encode(f"Connected to {socket.getsockname()}"))
 
     while True:
-        data = socket.recv(4096)
+        try:
+            data = socket.recv(4096)
+        except:
+            print("No data from client")
+
         print(data.decode("utf-8"))
 
         response = "Server echo: " + data.decode("utf-8")
@@ -41,7 +45,7 @@ def handle_client(socket):
             print(f"Number of threads/clients: {str(thread_count)}")
             break
 
-        socket.sendall(str.encode(response))
+        # socket.sendall(str.encode(response))
 
     socket.close()
 

@@ -25,12 +25,14 @@ def start_user_watcher(audit_log, socket):
                             notification = f"[{current_time}] {data_attr['type']} {data_attr['acct']} by {data_attr['AUID']}"
 
                             print(notification)
+                            socket.send(notification.encode('utf-8'))
                     elif data_attr['type'] == 'DEL_USER':
                         try:
                             data_attr['ID'] = data_attr['ID'].strip('\n')
                             notification = f"[{current_time}] {data_attr['type']} {data_attr['ID']} by {data_attr['AUID']}"
 
                             print(notification)
+                            socket.send(notification.encode('utf-8'))
                         except:
                             print("User does not exist")
 
