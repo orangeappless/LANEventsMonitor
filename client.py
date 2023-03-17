@@ -8,6 +8,7 @@ from multiprocessing import Process
 
 from modules import dir_watcher
 from modules import user_watcher
+from modules import root_watcher
 
 
 def parse_config(config_file_path):
@@ -38,15 +39,18 @@ def main():
     res = socket_.recv(4096)
     print(res.decode("utf-8"))
 
-    # Add watcher for each directory listed in config file
-    watcher_dirs = dict(configs.items("WATCHER_DIRS"))
-    dir_watcher.start_watcher(watcher_dirs, socket_)
+    # # Add watcher for each directory listed in config file
+    # watcher_dirs = dict(configs.items("DIR_WATCHER"))
+    # dir_watcher.start_watcher(watcher_dirs, socket_)
 
-    # Monitor user files
-    audit_log_file = dict(configs.items('USER_FILES'))['audit_log']
-    user_watcher.start_user_watcher(audit_log_file, socket_)
+    # # Monitor user files
+    # audit_log_file = dict(configs.items('USER_WATCHER'))['log']
+    # user_watcher.start_user_watcher(audit_log_file, socket_)
 
-    
+    # Monitor root
+    root_log_file = dict(configs.items('ROOT_WATCHER'))['log']
+    root_watcher.start_root_watcher(root_log_file, socket_)
+
 
     # while True:
     #     data = input("> ")
