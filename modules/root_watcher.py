@@ -4,6 +4,13 @@ import os
 
 
 def start_root_watcher(audit_log, socket):
+    root_login_cmds = [
+        'su',           # `sudo su`
+        '/bin/bash',    # `sudo -s`
+        '7375202D',     # `sudo su -`
+        '-bash'         # `sudo -i`
+    ]
+
     file_size = os.stat(audit_log).st_size
 
     with open(audit_log, 'r') as log_file:
@@ -16,7 +23,6 @@ def start_root_watcher(audit_log, socket):
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
                 # Parse for root login commands in log entry
-                # Currently tracks `sudo su`, `sudo -s`, `sudo su -`, `sudo -i`
                 if 'USER_CMD' in new_data:
                     new_data = new_data.replace("'", " ")
                     new_data = new_data.replace('"', "")
@@ -27,7 +33,7 @@ def start_root_watcher(audit_log, socket):
                     data_attr['UID'] = data_attr.pop('\x1dUID')
                     # print(data_attr) 
 
-                    if data_attr['exe'] == "/usr/bin/sudo" and (data_attr['cmd'] == "su" or data_attr['cmd'] == "/bin/bash" or data_attr['cmd'] == '7375202D' or data_attr['cmd'] == '-bash'):
+                    if data_attr['exe'] == "/usr/bin/sudo" and [cmd for cmd in root_login_cmds if(cmd in data_attr['cmd'])]:
                         if data_attr['res'] == 'success':
                             notification = f"[{current_time}] root login SUCCESS by \"{data_attr['UID']}\""
                             
