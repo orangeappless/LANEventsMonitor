@@ -8,6 +8,7 @@ from multiprocessing import Process
 
 from modules import dir_watcher
 from modules import user_watcher
+from modules import root_watcher
 
 
 def parse_config(config_file_path):
@@ -38,15 +39,36 @@ def main():
     res = socket_.recv(4096)
     print(res.decode("utf-8"))
 
-    # Add watcher for each directory listed in config file
-    watcher_dirs = dict(configs.items("WATCHER_DIRS"))
-    dir_watcher.start_watcher(watcher_dirs, socket_)
+    # List to store processes for each monitoring module
+    proc_list = []
 
-    # Monitor user files
-    audit_log_file = dict(configs.items('USER_FILES'))['audit_log']
-    user_watcher.start_user_watcher(audit_log_file, socket_)
+    # Monitor target directories
+    watcher_dirs = dict(configs.items("DIR_WATCHER"))
+    dir_watcher_proc = Process(
+        target=dir_watcher.start_watcher,
+        args=(watcher_dirs, socket_,)
+    )
+    proc_list.append(dir_watcher_proc)
 
+    # # Monitor user account changes
+    audit_log_file = dict(configs.items('USER_WATCHER'))['log']
+    user_watcher_proc = Process(
+        target=user_watcher.start_user_watcher,
+        args=(audit_log_file, socket_,)
+    )
+    proc_list.append(user_watcher_proc)
+
+    # Monitor root/wheel logins
+    root_log_file = dict(configs.items('ROOT_WATCHER'))['log']
+    root_watcher_proc = Process(
+        target=root_watcher.start_root_watcher,
+        args=(root_log_file, socket_,)
+    )
+    proc_list.append(root_watcher_proc)
     
+    # Start all watchers
+    for proc in proc_list:
+        proc.start()
 
     # while True:
     #     data = input("> ")
