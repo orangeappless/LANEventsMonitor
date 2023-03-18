@@ -1,6 +1,7 @@
 import time
 from datetime import datetime
 import os
+import subprocess
 
 
 def start_root_watcher(audit_log, socket):
@@ -42,6 +43,41 @@ def start_root_watcher(audit_log, socket):
                         elif data_attr['res'] == 'failed':
                             notification = f"[{current_time}] root login FAILED by \"{data_attr['UID']}\""
                             
+                            print(notification)
+                            socket.send(notification.encode('utf-8'))
+                
+                # Parse attempted logins to non-root accounts in `wheel` group
+                elif 'USER_AUTH' in new_data and 'acct="root"' not in new_data:
+                    new_data = new_data.replace("'", " ")
+                    new_data = new_data.replace('"', "")
+                    new_data = new_data.split(' ')
+                    data_attr = dict((s.split('=')+[1])[:2] for s in new_data)
+
+                    data_attr['AUID'] = data_attr['AUID'].strip('\n')
+                    data_attr['UID'] = data_attr.pop('\x1dUID')
+                    # print(data_attr)
+
+                    # Parse `wheel` group in `/etc/group`
+                    cat_cmd = subprocess.Popen(['cat', '/etc/group'], stdout=subprocess.PIPE, shell=False)
+                    grep_cmd = subprocess.Popen(['grep', 'wheel:x'], stdin=cat_cmd.stdout, stdout=subprocess.PIPE, shell=False)
+                    cat_cmd.stdout.close()
+                    output = grep_cmd.communicate()[0]
+
+                    # Clean output and get users of `wheel` group
+                    wheel_users = output.decode('utf-8').split(':')[-1]
+                    wheel_users = wheel_users.strip('\n')
+                    wheel_users_list = wheel_users.split(',')
+
+                    # Check if target user is in `wheel`
+                    if data_attr['acct'] in wheel_users_list:
+                        if data_attr['res'] == 'success':
+                            notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login SUCCESS by \"{data_attr['UID']}\""
+                            
+                            print(notification)
+                            socket.send(notification.encode('utf-8'))                         
+                        elif data_attr['res'] == 'failed':
+                            notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
+
                             print(notification)
                             socket.send(notification.encode('utf-8'))
 
