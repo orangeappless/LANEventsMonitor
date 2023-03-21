@@ -6,27 +6,30 @@ from datetime import datetime
 class EventHandler(pyinotify.ProcessEvent):
     def process_IN_CREATE(self, event):
         # Creation in directory
-        notification = f"Created: {event.pathname}"
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+        notification = f"[{current_time}] CREATED: {event.pathname}"
+
         print(notification)
         self.send_notif(notification)
 
     def process_IN_DELETE(self, event):
         # Deletion in directory
-        notification = f"Deleted: {event.pathname}"
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+        notification = f"[{current_time}] DELETED: {event.pathname}"
+
         print(notification)
         self.send_notif(notification)
 
     def process_IN_CLOSE_WRITE(self, event):
         # Change in file in directory
-        notification = f"Modified: {event.pathname}"
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+        notification = f"[{current_time}] MODIFIED: {event.pathname}"
+
         print(notification)
         self.send_notif(notification)
 
     def send_notif(self, notification):
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-        data = f"[{current_time}] {notification}"
-
-        socket_.send(data.encode("utf-8"))
+        socket_.send(notification.encode("utf-8"))
 
 
 def start_watcher(directories, socket):
@@ -44,4 +47,3 @@ def start_watcher(directories, socket):
         watch_manager.add_watch(dir, mask, rec=True)
 
     notifier.start()
-    print("Notifier started")
