@@ -80,6 +80,6 @@ def start_ssh_watcher(log_file, socket, max_failed, block_time):
                             # Set timer to drop rule after n time
                             unblock_timer = Timer(int(block_time), remove_rule, args=(data_attr['addr'], socket))
                             unblock_timer.start()
-                    elif data_attr['terminal'] == 'ssh' and data_attr['res'] == 'success':
+                    elif data_attr['terminal'] == 'ssh' and data_attr['res'] == 'success' and data_attr['addr'] in failed_attempts:
                         # Clear failed dict entry upon successful login
                         failed_attempts.pop(data_attr['addr'])
