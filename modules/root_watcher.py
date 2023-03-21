@@ -1,7 +1,8 @@
-import time
 from datetime import datetime
 import os
 import subprocess
+
+from utilities import audit_parser
 
 
 def start_root_watcher(audit_log, socket):
@@ -25,14 +26,7 @@ def start_root_watcher(audit_log, socket):
 
                 # Parse for root login commands in log entry
                 if 'USER_CMD' in new_data:
-                    new_data = new_data.replace("'", " ")
-                    new_data = new_data.replace('"', "")
-                    new_data = new_data.split(' ')
-                    data_attr = dict((s.split('=')+[1])[:2] for s in new_data)
-
-                    data_attr['AUID'] = data_attr['AUID'].strip('\n')
-                    data_attr['UID'] = data_attr.pop('\x1dUID')
-                    # print(data_attr) 
+                    data_attr = audit_parser.get_audit_attrs(new_data)
 
                     if data_attr['exe'] == "/usr/bin/sudo" and [cmd for cmd in root_login_cmds if(cmd in data_attr['cmd'])]:
                         if data_attr['res'] == 'success':
@@ -48,14 +42,7 @@ def start_root_watcher(audit_log, socket):
                 
                 # Parse attempted logins to non-root accounts in `wheel` group
                 elif 'USER_AUTH' in new_data and 'acct="root"' not in new_data and 'terminal=ssh' not in new_data:
-                    new_data = new_data.replace("'", " ")
-                    new_data = new_data.replace('"', "")
-                    new_data = new_data.split(' ')
-                    data_attr = dict((s.split('=')+[1])[:2] for s in new_data)
-
-                    data_attr['AUID'] = data_attr['AUID'].strip('\n')
-                    data_attr['UID'] = data_attr.pop('\x1dUID')
-                    # print(data_attr)
+                    data_attr = audit_parser.get_audit_attrs(new_data)
 
                     # Parse `wheel` group in `/etc/group`
                     cat_cmd = subprocess.Popen(['cat', '/etc/group'], stdout=subprocess.PIPE, shell=False)
@@ -80,5 +67,3 @@ def start_root_watcher(audit_log, socket):
 
                             print(notification)
                             socket.send(notification.encode('utf-8'))
-
-            # time.sleep(1)
