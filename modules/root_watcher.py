@@ -47,7 +47,7 @@ def start_root_watcher(audit_log, socket):
                             socket.send(notification.encode('utf-8'))
                 
                 # Parse attempted logins to non-root accounts in `wheel` group
-                elif 'USER_AUTH' in new_data and 'acct="root"' not in new_data:
+                elif 'USER_AUTH' in new_data and 'acct="root"' not in new_data and 'terminal=ssh' not in new_data:
                     new_data = new_data.replace("'", " ")
                     new_data = new_data.replace('"', "")
                     new_data = new_data.split(' ')
