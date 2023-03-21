@@ -21,11 +21,11 @@ def start_user_watcher(audit_log, socket):
                     notification = f"[{current_time}] USER ADDED: \"{data_attr['acct']}\" by \"{data_attr['AUID']}\""
 
                     print(notification)
-                    socket.send(notification.encode('utf-8'))
+                    socket.sendall(notification.encode('utf-8'))
                 elif new_data.startswith('type=DEL_GROUP'):
                     data_attr = audit_parser.get_audit_attrs(new_data)
 
                     notification = f"[{current_time}] USER DELETED: \"{data_attr['acct']}\" by \"{data_attr['AUID']}\""
 
                     print(notification)
-                    socket.send(notification.encode('utf-8'))           
+                    socket.sendall(notification.encode('utf-8'))           

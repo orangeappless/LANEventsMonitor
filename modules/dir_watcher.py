@@ -29,7 +29,7 @@ class EventHandler(pyinotify.ProcessEvent):
         self.send_notif(notification)
 
     def send_notif(self, notification):
-        socket_.send(notification.encode("utf-8"))
+        socket_.sendall(notification.encode("utf-8"))
 
 
 def start_watcher(directories, socket):
