@@ -9,6 +9,7 @@ from multiprocessing import Process
 from modules import dir_watcher
 from modules import user_watcher
 from modules import root_watcher
+from modules import ssh_watcher
 
 
 def parse_config(config_file_path):
@@ -66,6 +67,14 @@ def main():
     )
     proc_list.append(root_watcher_proc)
     
+    # Monitor incoming SSH logins
+    root_log_file = dict(configs.items('SSH_WATCHER'))['log']
+    ssh_watcher_proc = Process(
+        target=ssh_watcher.start_ssh_watcher,
+        args=(root_log_file, socket_, dict(configs.items('SSH_WATCHER'))['max_attempts'], dict(configs.items('SSH_WATCHER'))['block_time'])
+    )
+    proc_list.append(ssh_watcher_proc)
+
     # Start all watchers
     for proc in proc_list:
         proc.start()
