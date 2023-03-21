@@ -74,11 +74,10 @@ def main():
         args=(root_log_file, socket_,)
     )
     proc_list.append(ssh_watcher_proc)
-    ssh_watcher_proc.start()
 
     # Start all watchers
-    # for proc in proc_list:
-    #     proc.start()
+    for proc in proc_list:
+        proc.start()
 
     # while True:
     #     data = input("> ")
