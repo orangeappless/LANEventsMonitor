@@ -4,7 +4,6 @@
 import sys
 import socket
 import configparser
-from multiprocessing import Process
 from threading import Thread
 import ssl
 
@@ -54,16 +53,10 @@ def main():
     print(res.decode("utf-8"))
 
     # List to store processes for each monitoring module
-    proc_list = []
     thread_list = []
 
     # Monitor target directories
     watcher_dirs = dict(configs.items("DIR_WATCHER"))
-    # dir_watcher_proc = Process(
-    #     target=dir_watcher.start_watcher,
-    #     args=(watcher_dirs, secure_socket,)
-    # )
-    # proc_list.append(dir_watcher_proc)
     dir_watcher_thread = Thread(
         target=dir_watcher.start_watcher,
         args=(watcher_dirs, secure_socket)
@@ -72,11 +65,6 @@ def main():
 
     # # Monitor user account changes
     audit_log_file = dict(configs.items('USER_WATCHER'))['log']
-    # user_watcher_proc = Process(
-    #     target=user_watcher.start_user_watcher,
-    #     args=(audit_log_file, secure_socket,)
-    # )
-    # proc_list.append(user_watcher_proc)
     user_watcher_thread = Thread(
         target=user_watcher.start_user_watcher,
         args=(audit_log_file, secure_socket)
@@ -85,11 +73,6 @@ def main():
 
     # Monitor root/wheel logins
     root_log_file = dict(configs.items('ROOT_WATCHER'))['log']
-    # root_watcher_proc = Process(
-    #     target=root_watcher.start_root_watcher,
-    #     args=(root_log_file, secure_socket,)
-    # )
-    # proc_list.append(root_watcher_proc)
     root_watcher_thread = Thread(
         target=root_watcher.start_root_watcher,
         args=(root_log_file, secure_socket)
@@ -98,11 +81,6 @@ def main():
     
     # Monitor incoming SSH logins
     root_log_file = dict(configs.items('SSH_WATCHER'))['log']
-    # ssh_watcher_proc = Process(
-    #     target=ssh_watcher.start_ssh_watcher,
-    #     args=(root_log_file, secure_socket, dict(configs.items('SSH_WATCHER'))['max_attempts'], dict(configs.items('SSH_WATCHER'))['block_time'])
-    # )
-    # proc_list.append(ssh_watcher_proc)
     ssh_watcher_thread = Thread(
         target=ssh_watcher.start_ssh_watcher,
         args=(root_log_file, secure_socket, dict(configs.items('SSH_WATCHER'))['max_attempts'], dict(configs.items('SSH_WATCHER'))['block_time'])
@@ -110,8 +88,6 @@ def main():
     thread_list.append(ssh_watcher_thread)
 
     # Start all watchers
-    # for proc in proc_list:
-    #     proc.start()
     for thread in thread_list:
         thread.start()
 
