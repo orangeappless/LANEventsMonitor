@@ -71,7 +71,7 @@ def main():
     root_log_file = dict(configs.items('SSH_WATCHER'))['log']
     ssh_watcher_proc = Process(
         target=ssh_watcher.start_ssh_watcher,
-        args=(root_log_file, socket_,)
+        args=(root_log_file, socket_, dict(configs.items('SSH_WATCHER'))['max_attempts'], dict(configs.items('SSH_WATCHER'))['block_time'])
     )
     proc_list.append(ssh_watcher_proc)
 
