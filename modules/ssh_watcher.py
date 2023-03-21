@@ -9,12 +9,12 @@ from utilities import audit_parser
 def block_addr(ip_addr, block_time, socket):
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     block_notification = f"[{time_of_block}] max failed ssh attempts reached for \"{ip_addr}\", blocking for {block_time} seconds"
+    
+    print(block_notification)
+    socket.sendall(block_notification.encode('utf-8'))
 
     cmd = ['iptables', '-A', 'INPUT', '-s', ip_addr, '-j', 'DROP']
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
-
-    print(block_notification)
-    socket.send(block_notification.encode('utf-8'))
 
 
 def remove_rule(ip_addr, socket):
@@ -28,7 +28,7 @@ def remove_rule(ip_addr, socket):
     remove_dict_entry(ip_addr)
 
     print(unblock_notification)
-    socket.send(unblock_notification.encode('utf-8'))
+    socket.sendall(unblock_notification.encode('utf-8'))
 
 
 def remove_dict_entry(ip_addr):
@@ -64,7 +64,7 @@ def start_ssh_watcher(log_file, socket, max_failed, block_time):
                         notification = f"[{current_time}] FAILED ssh attempt ({failed_attempts[data_attr['addr']]}) to \"{data_attr['acct']}\" by \"{data_attr['hostname']}\""
 
                         print(notification)
-                        socket.send(notification.encode('utf-8'))
+                        socket.sendall(notification.encode('utf-8'))
 
                         if failed_attempts[data_attr['addr']] >= int(max_failed):
                             # Block address after reaching max attempts

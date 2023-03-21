@@ -33,12 +33,12 @@ def start_root_watcher(audit_log, socket):
                             notification = f"[{current_time}] root login SUCCESS by \"{data_attr['UID']}\""
                             
                             print(notification)
-                            socket.send(notification.encode('utf-8'))                            
+                            socket.sendall(notification.encode('utf-8'))                            
                         elif data_attr['res'] == 'failed':
                             notification = f"[{current_time}] root login FAILED by \"{data_attr['UID']}\""
                             
                             print(notification)
-                            socket.send(notification.encode('utf-8'))
+                            socket.sendall(notification.encode('utf-8'))
                 
                 # Parse attempted logins to non-root accounts in `wheel` group
                 elif 'USER_AUTH' in new_data and 'acct="root"' not in new_data and 'terminal=ssh' not in new_data:
@@ -61,9 +61,9 @@ def start_root_watcher(audit_log, socket):
                             notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login SUCCESS by \"{data_attr['UID']}\""
                             
                             print(notification)
-                            socket.send(notification.encode('utf-8'))                         
+                            socket.sendall(notification.encode('utf-8'))                         
                         elif data_attr['res'] == 'failed':
                             notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
 
                             print(notification)
-                            socket.send(notification.encode('utf-8'))
+                            socket.sendall(notification.encode('utf-8'))
