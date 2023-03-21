@@ -3,6 +3,8 @@ import os
 import subprocess
 from threading import Timer
 
+from utilities import audit_parser
+
 
 def block_addr(ip_addr, block_time, socket):
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
@@ -48,15 +50,17 @@ def start_ssh_watcher(log_file, socket, max_failed, block_time):
             if new_data:
                 current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
 
-                if 'USER_AUTH' and 'PAM:authentication' in new_data:
-                    new_data = new_data.replace("'", " ")
-                    new_data = new_data.replace('"', "")
-                    new_data = new_data.split(' ')
-                    data_attr = dict((s.split('=')+[1])[:2] for s in new_data)
+                if 'USER_AUTH' and 'PAM:authentication' in new_data and '/usr/bin/su' not in new_data:
+                    # new_data = new_data.replace("'", " ")
+                    # new_data = new_data.replace('"', "")
+                    # new_data = new_data.split(' ')
+                    # data_attr = dict((s.split('=')+[1])[:2] for s in new_data)
 
-                    data_attr['AUID'] = data_attr['AUID'].strip('\n')
-                    data_attr['UID'] = data_attr.pop('\x1dUID')
-                    #print(data_attr) 
+                    # data_attr['AUID'] = data_attr['AUID'].strip('\n')
+                    # data_attr['UID'] = data_attr.pop('\x1dUID')
+                    #print(data_attr)
+
+                    data_attr = audit_parser.get_audit_attrs(new_data)
 
                     if data_attr['terminal'] == 'ssh' and data_attr['res'] == 'failed':
                         # Update dict entry for failed IP
