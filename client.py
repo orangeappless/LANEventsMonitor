@@ -89,10 +89,11 @@ def main():
     thread_list.append(user_watcher_thread)
 
     # Monitor root/wheel logins
-    root_log_file = dict(configs.items('ROOT_WATCHER'))['log']
+    root_watcher_configs = dict(configs.items('ROOT_WATCHER'))
+    root_log_file = root_watcher_configs['log']
     root_watcher_thread = Thread(
         target=root_watcher.start_root_watcher,
-        args=(root_log_file, secure_socket)
+        args=(root_log_file, secure_socket, root_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(root_watcher_thread)
     

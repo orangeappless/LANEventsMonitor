@@ -19,7 +19,6 @@ def get_current_level(threat_file):
 
 def update_threat(action, threat_file, iters=1):
     action_threat_level = get_action_levels()
-    print(action_threat_level)
 
     with open(f'utilities/{threat_file}', 'r+') as file:
         # Read current threat level
