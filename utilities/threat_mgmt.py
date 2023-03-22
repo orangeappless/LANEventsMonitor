@@ -28,5 +28,6 @@ def update_threat(action, threat_file, iters=1):
         # Write updated threat level
         file.seek(0)
         current_threat += (threat_levels[action] * iters)
-        file.write(str(current_threat) + '\n')
+        updated_threat = max(0, current_threat)
+        file.write(str(updated_threat) + '\n')
         file.truncate()
