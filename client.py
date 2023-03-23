@@ -80,29 +80,30 @@ def main():
     )
     thread_list.append(dir_watcher_thread)
 
-    # # Monitor user account changes
-    audit_log_file = dict(configs.items('USER_WATCHER'))['log']
+    # Monitor user account changes
+    user_watcher_configs = dict(configs.items('USER_WATCHER'))
+    user_watcher_audit = user_watcher_configs['log']
     user_watcher_thread = Thread(
         target=user_watcher.start_user_watcher,
-        args=(audit_log_file, secure_socket)
+        args=(user_watcher_audit, secure_socket, user_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(user_watcher_thread)
 
     # Monitor root/wheel logins
     root_watcher_configs = dict(configs.items('ROOT_WATCHER'))
-    root_log_file = root_watcher_configs['log']
+    root_watcher_audit = root_watcher_configs['log']
     root_watcher_thread = Thread(
         target=root_watcher.start_root_watcher,
-        args=(root_log_file, secure_socket, root_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
+        args=(root_watcher_audit, secure_socket, root_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(root_watcher_thread)
     
     # Monitor incoming SSH logins
     ssh_watcher_configs = dict(configs.items('SSH_WATCHER'))
-    ssh_audit_log = ssh_watcher_configs['log']
+    ssh_watcher_audit = ssh_watcher_configs['log']
     ssh_watcher_thread = Thread(
         target=ssh_watcher.start_ssh_watcher,
-        args=(ssh_audit_log, secure_socket, ssh_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
+        args=(ssh_watcher_audit, secure_socket, ssh_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(ssh_watcher_thread)
 
