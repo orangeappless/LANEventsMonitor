@@ -9,7 +9,7 @@ from utilities import threat_mgmt
 
 def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file, socket):
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] possible INCIDENT, locking new `wheel user` {wheel_user} for {block_time} seconds"
+    block_notification = f"[{time_of_block}] possible INCIDENT, locking new `wheel` user {wheel_user} for {block_time} seconds"
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -25,7 +25,7 @@ def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file,
 
 def remove_block_usermod_wheel(wheel_user, user, times_attempted, threat_file, socket):
     time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    unblock_notification = f"[{time_of_unblock}] unblocking `usermod` command for {user}, and unlocking {wheel_user}"
+    unblock_notification = f"[{time_of_unblock}] unlocking {wheel_user} account"
 
     # Unlock user
     unlock_user_cmd = ['passwd', '-u', f'{wheel_user}']

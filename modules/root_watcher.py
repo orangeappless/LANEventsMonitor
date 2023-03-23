@@ -137,29 +137,38 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             threat_mgmt.update_threat('clear_failed_wheel', threat_file, failed_wheel_attempts)
                             failed_wheel_attempts = 0
                         elif data_attr['res'] == 'failed':
-                            failed_wheel_attempts += 1
-                            threat_mgmt.update_threat('failed_wheel', threat_file)
+                            # Because user_watcher locks newly-added `wheel` accounts when the machine is at max threat level, trying
+                            # to log into these locked accounts can fail. We don't want this to trigger a root_watcher alert, so we
+                            # check for this first
+                            check_lock = ['passwd', '--status', data_attr['acct']]
+                            exec_check_lock = subprocess.run(check_lock, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+                            output = exec_check_lock.stdout.decode('utf-8')
+                            
+                            # If the account is not locked, proceed as intended
+                            if 'Password locked.' not in output:
+                                failed_wheel_attempts += 1
+                                threat_mgmt.update_threat('failed_wheel', threat_file)
 
-                            notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
+                                notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
 
-                            print(notification)
-                            socket.sendall(notification.encode('utf-8'))
+                                print(notification)
+                                socket.sendall(notification.encode('utf-8'))
 
-                            current_threat_level = threat_mgmt.get_current_level(threat_file)
+                                current_threat_level = threat_mgmt.get_current_level(threat_file)
 
-                            if current_threat_level >= int(threat_max):
-                                # Block `su` at max threat
-                                threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+                                if current_threat_level >= int(threat_max):
+                                    # Block `su` at max threat
+                                    threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
 
-                                print(threat_notification)
-                                socket.sendall(threat_notification.encode('utf-8'))
+                                    print(threat_notification)
+                                    socket.sendall(threat_notification.encode('utf-8'))
 
-                                block_su('wheel', data_attr['UID'], block_time, failed_wheel_attempts, threat_file, socket)
-                                failed_wheel_attempts = 0
-                            elif current_threat_level >= int(threat_mid):
-                                threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
+                                    block_su('wheel', data_attr['UID'], block_time, failed_wheel_attempts, threat_file, socket)
+                                    failed_wheel_attempts = 0
+                                elif current_threat_level >= int(threat_mid):
+                                    threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                    threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
 
-                                print(threat_notification)
-                                socket.sendall(threat_notification.encode('utf-8'))
+                                    print(threat_notification)
+                                    socket.sendall(threat_notification.encode('utf-8'))
