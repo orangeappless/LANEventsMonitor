@@ -7,12 +7,12 @@ from utilities import audit_parser
 from utilities import threat_mgmt
 
 
-def block_su(user, block_time, times_failed, threat_file, socket):
+def block_su(operation, user, block_time, times_failed, threat_file, socket):
     # setfacl -m u:test:--- /bin/mkdir 
     # setfacl -x u:test /usr/bin/su 
 
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] blocking `su` command for {user}"
+    block_notification = f"[{time_of_block}] possible INCIDENT, blocking `su` command for {user}"
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -21,11 +21,11 @@ def block_su(user, block_time, times_failed, threat_file, socket):
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Remove this rule after a set amount of time
-    unblock_timer = Timer(int(block_time), unblock_su, args=(user, times_failed, threat_file, socket))
+    unblock_timer = Timer(int(block_time), unblock_su, args=(operation, user, times_failed, threat_file, socket))
     unblock_timer.start()
 
 
-def unblock_su(user, times_failed, threat_file, socket):
+def unblock_su(operation, user, times_failed, threat_file, socket):
     time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     unblock_notification = f"[{time_of_unblock}] unblocking `su` command for {user}"
 
@@ -33,7 +33,10 @@ def unblock_su(user, times_failed, threat_file, socket):
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)    
    
     # Lower threat level after unblock
-    threat_mgmt.update_threat('clear_failed_root', threat_file, times_failed)
+    if operation == 'root':
+        threat_mgmt.update_threat('clear_failed_root', threat_file, times_failed)
+    elif operation == 'wheel':
+        threat_mgmt.update_threat('clear_failed_wheel', threat_file, times_failed)
 
     print(unblock_notification)
     socket.sendall(unblock_notification.encode('utf-8'))
@@ -90,8 +93,14 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             current_threat_level = threat_mgmt.get_current_level(threat_file)
 
                             if current_threat_level >= int(threat_max):
+                                threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+
+                                print(threat_notification)
+                                socket.sendall(threat_notification.encode('utf-8'))
+
                                 # Blocking action
-                                block_su(data_attr['UID'], block_time, failed_root_attempts, threat_file, socket)
+                                block_su('root', data_attr['UID'], block_time, failed_root_attempts, threat_file, socket)
 
                                 # Reset failed count, for next block attempt
                                 failed_root_attempts = 0
@@ -121,12 +130,36 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                     # Check if target user is in `wheel`
                     if data_attr['acct'] in wheel_users_list:
                         if data_attr['res'] == 'success':
-                            notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login SUCCESS by \"{data_attr['UID']}\""
+                            # notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login SUCCESS by \"{data_attr['UID']}\""
                             
-                            print(notification)
-                            socket.sendall(notification.encode('utf-8'))                         
+                            # print(notification)
+                            # socket.sendall(notification.encode('utf-8'))
+                            threat_mgmt.update_threat('clear_failed_wheel', threat_file, failed_wheel_attempts)
+                            failed_wheel_attempts = 0
                         elif data_attr['res'] == 'failed':
+                            failed_wheel_attempts += 1
+                            threat_mgmt.update_threat('failed_wheel', threat_file)
+
                             notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
 
                             print(notification)
                             socket.sendall(notification.encode('utf-8'))
+
+                            current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                            if current_threat_level >= int(threat_max):
+                                # Block `su` at max threat
+                                threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+
+                                print(threat_notification)
+                                socket.sendall(threat_notification.encode('utf-8'))
+
+                                block_su('wheel', data_attr['UID'], block_time, failed_wheel_attempts, threat_file, socket)
+                                failed_wheel_attempts = 0
+                            elif current_threat_level >= int(threat_mid):
+                                threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
+
+                                print(threat_notification)
+                                socket.sendall(threat_notification.encode('utf-8'))
