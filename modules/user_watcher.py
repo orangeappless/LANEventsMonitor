@@ -1,9 +1,46 @@
 from datetime import datetime
 import os
+import subprocess
+from threading import Timer
 
 from utilities import audit_parser
+from utilities import threat_mgmt
 
-def start_user_watcher(audit_log, socket):
+
+def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file, socket):
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    block_notification = f"[{time_of_block}] possible INCIDENT, locking new `wheel` user {wheel_user} for {block_time} seconds"
+    
+    print(block_notification)
+    socket.sendall(block_notification.encode('utf-8'))
+
+    # Lock newly-added `wheel` user
+    lock_user_cmd = ['passwd', '-l', f'{wheel_user}']
+    exec_lock_user = subprocess.run(lock_user_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Remove this rule after a set amount of time
+    unblock_timer = Timer(int(block_time), remove_block_usermod_wheel, args=(wheel_user, user, times_failed, threat_file, socket))
+    unblock_timer.start()
+
+
+def remove_block_usermod_wheel(wheel_user, user, times_attempted, threat_file, socket):
+    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    unblock_notification = f"[{time_of_unblock}] unlocking {wheel_user} account"
+
+    # Unlock user
+    unlock_user_cmd = ['passwd', '-u', f'{wheel_user}']
+    exec_unlock_user_cmd = subprocess.run(unlock_user_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Adjust threat
+    threat_mgmt.update_threat('clear_add_wheel_user', threat_file, times_attempted)
+
+    print(unblock_notification)
+    socket.sendall(unblock_notification.encode('utf-8'))
+
+
+def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, threat_mid, threat_default):
+    wheel_group_attempts = 0
+
     file_size = os.stat(audit_log).st_size
 
     with open(audit_log, 'r') as log_file:
@@ -29,3 +66,34 @@ def start_user_watcher(audit_log, socket):
 
                     print(notification)
                     socket.sendall(notification.encode('utf-8'))           
+                # Check for additions to `wheel` group
+                elif new_data.startswith('type=USER_MGMT') and 'add-user-to-group' in new_data and 'grp="wheel"' in new_data:
+                    data_attr = audit_parser.get_audit_attrs(new_data)
+
+                    if data_attr['grp'] == 'wheel':
+                        wheel_group_attempts += 1
+
+                        threat_mgmt.update_threat('add_wheel_user', threat_file)
+
+                        notification = f"[{current_time}] user \"{data_attr['acct']}\" added to `wheel` group"
+
+                        print(notification)
+                        socket.sendall(notification.encode('utf-8'))
+
+                        current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                        if current_threat_level >= int(threat_max):
+                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+
+                            print(threat_notification)
+                            socket.sendall(threat_notification.encode('utf-8'))
+        
+                            block_usermod_wheel(data_attr['acct'], data_attr['UID'], block_time, wheel_group_attempts, threat_file, socket)
+                            wheel_group_attempts = 0
+                        elif current_threat_level >= int(threat_mid):
+                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
+
+                            print(threat_notification)
+                            socket.sendall(threat_notification.encode('utf-8'))

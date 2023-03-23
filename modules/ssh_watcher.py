@@ -4,11 +4,12 @@ import subprocess
 from threading import Timer
 
 from utilities import audit_parser
+from utilities import threat_mgmt
 
 
 def block_addr(ip_addr, block_time, socket):
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] max failed ssh attempts reached for \"{ip_addr}\", blocking for {block_time} seconds"
+    block_notification = f"[{time_of_block}] possible INCIDENT at \"{ip_addr}\", blocking ssh for {block_time} seconds"
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -17,13 +18,16 @@ def block_addr(ip_addr, block_time, socket):
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
-def remove_rule(ip_addr, socket):
+def remove_rule(ip_addr, socket, threat_file):
     time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
     unblock_notification = f"[{time_of_unblock}] unblocking ssh rule for \"{ip_addr}\""
 
     cmd = ['iptables', '-D', 'INPUT', '-s', ip_addr, '-j', 'DROP']
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
+    # Decrease threat level caused by failed ssh attempts
+    threat_mgmt.update_threat('clear_ssh', threat_file, failed_attempts[ip_addr])
+
     # Remove entry from dict
     remove_dict_entry(ip_addr)
 
@@ -35,7 +39,7 @@ def remove_dict_entry(ip_addr):
     failed_attempts.pop(ip_addr)
 
 
-def start_ssh_watcher(log_file, socket, max_failed, block_time):
+def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, threat_mid, threat_default):
     global failed_attempts
     failed_attempts = {}
 
@@ -57,22 +61,46 @@ def start_ssh_watcher(log_file, socket, max_failed, block_time):
                         # Update dict entry for failed IP
                         if data_attr['addr'] not in failed_attempts:
                             failed_attempts[data_attr['addr']] = 1
+
+                            # Update threat level
+                            threat_mgmt.update_threat('failed_ssh', threat_file)
                         else:
                             failed_attempts[data_attr['addr']] += 1
 
-                        # addr_failed_attempts = f"failed attempts: {failed_attempts[data_attr['addr']]}"
+                            # Update threat level
+                            threat_mgmt.update_threat('failed_ssh', threat_file)
+
                         notification = f"[{current_time}] FAILED ssh attempt ({failed_attempts[data_attr['addr']]}) to \"{data_attr['acct']}\" by \"{data_attr['hostname']}\""
 
                         print(notification)
                         socket.sendall(notification.encode('utf-8'))
 
-                        if failed_attempts[data_attr['addr']] >= int(max_failed):
-                            # Block address after reaching max attempts
+                        # Evaluate threat level, and block address if threshold reached
+                        current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                        if current_threat_level >= int(threat_max):
+                            # Block IP if max level threat
+                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+
+                            print(threat_notification)
+                            socket.sendall(threat_notification.encode('utf-8'))
+
                             block_addr(data_attr['addr'], block_time, socket)
 
                             # Set timer to drop rule after n time
-                            unblock_timer = Timer(int(block_time), remove_rule, args=(data_attr['addr'], socket))
+                            unblock_timer = Timer(int(block_time), remove_rule, args=(data_attr['addr'], socket, threat_file))
                             unblock_timer.start()
+                        elif current_threat_level >= int(threat_mid):
+                            # Only send alert of event if mid level threat
+                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
+
+                            print(threat_notification)
+                            socket.sendall(threat_notification.encode('utf-8'))
                     elif data_attr['terminal'] == 'ssh' and data_attr['res'] == 'success' and data_attr['addr'] in failed_attempts:
+                        # Clear threat level upon successful login
+                        threat_mgmt.update_threat('success_ssh', threat_file, failed_attempts[data_attr['addr']])
+
                         # Clear failed dict entry upon successful login
                         failed_attempts.pop(data_attr['addr'])

@@ -20,6 +20,13 @@ def parse_config(config_file_path):
     return config_parser
 
 
+def init_threat_file(threat_file):
+    with open(f'utilities/{threat_file}', 'r+') as file:
+        file.seek(0)
+        file.write(str(0) + '\n')
+        file.truncate()
+
+
 def create_secure_socket(socket):
     certfile = 'certs/domain.crt'
     keyfile = 'certs/domain.key'
@@ -33,6 +40,16 @@ def main():
     # Parse config file
     config_file = "config.ini"
     configs = parse_config(config_file)
+
+    # Reinitialize threat file on each startup; sets current threat of client to 0
+    threat_file = dict(configs.items('THREAT_MGMT'))['threat_file']     # File which stores client's current threat level
+    init_threat_file(threat_file)
+
+    # Set threat levels
+    threat_levels_config = dict(configs.items('THREAT_LEVELS'))
+    max_threat = int(threat_levels_config['max_threat'])
+    mid_threat = int(threat_levels_config['mid_threat'])
+    default_threat = int(threat_levels_config['default_threat'])
 
     # Connect to server
     socket_ = socket.socket()
@@ -63,27 +80,30 @@ def main():
     )
     thread_list.append(dir_watcher_thread)
 
-    # # Monitor user account changes
-    audit_log_file = dict(configs.items('USER_WATCHER'))['log']
+    # Monitor user account changes
+    user_watcher_configs = dict(configs.items('USER_WATCHER'))
+    user_watcher_audit = user_watcher_configs['log']
     user_watcher_thread = Thread(
         target=user_watcher.start_user_watcher,
-        args=(audit_log_file, secure_socket)
+        args=(user_watcher_audit, secure_socket, user_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(user_watcher_thread)
 
     # Monitor root/wheel logins
-    root_log_file = dict(configs.items('ROOT_WATCHER'))['log']
+    root_watcher_configs = dict(configs.items('ROOT_WATCHER'))
+    root_watcher_audit = root_watcher_configs['log']
     root_watcher_thread = Thread(
         target=root_watcher.start_root_watcher,
-        args=(root_log_file, secure_socket)
+        args=(root_watcher_audit, secure_socket, root_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(root_watcher_thread)
     
     # Monitor incoming SSH logins
-    root_log_file = dict(configs.items('SSH_WATCHER'))['log']
+    ssh_watcher_configs = dict(configs.items('SSH_WATCHER'))
+    ssh_watcher_audit = ssh_watcher_configs['log']
     ssh_watcher_thread = Thread(
         target=ssh_watcher.start_ssh_watcher,
-        args=(root_log_file, secure_socket, dict(configs.items('SSH_WATCHER'))['max_attempts'], dict(configs.items('SSH_WATCHER'))['block_time'])
+        args=(ssh_watcher_audit, secure_socket, ssh_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(ssh_watcher_thread)
 

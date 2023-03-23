@@ -49,7 +49,8 @@ def handle_client(socket):
         except:
             print("No data from client")
 
-        print(data.decode("utf-8"))
+        remote_client = socket.getpeername()[0]
+        print(f'{remote_client} :: {data.decode("utf-8")}')
 
         if not data:
             print(f"[Disconnected] {socket.getpeername()[0]}: {str(socket.getpeername()[1])}")
