@@ -67,10 +67,14 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
 
                     if data_attr['exe'] == "/usr/bin/sudo" and [cmd for cmd in root_login_cmds if(cmd in data_attr['cmd'])]:
                         if data_attr['res'] == 'success':
-                            notification = f"[{current_time}] root login SUCCESS by \"{data_attr['UID']}\""
+                            # notification = f"[{current_time}] root login SUCCESS by \"{data_attr['UID']}\""
                             
-                            print(notification)
-                            socket.sendall(notification.encode('utf-8'))                            
+                            # print(notification)
+                            # socket.sendall(notification.encode('utf-8'))
+
+                            # Reset threat and count caused by failed root logins
+                            threat_mgmt.update_threat('success_root', threat_file, failed_root_attempts)
+                            failed_root_attempts = 0
                         elif data_attr['res'] == 'failed':
                             failed_root_attempts += 1
                             
@@ -88,10 +92,13 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             if current_threat_level >= int(threat_max):
                                 # Blocking action
                                 block_su(data_attr['UID'], block_time, failed_root_attempts, threat_file, socket)
+
+                                # Reset failed count, for next block attempt
+                                failed_root_attempts = 0
                             elif current_threat_level >= int(threat_mid):
                                 # Only send alert of event if mid level threat
                                 threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                                threat_notification = f'[{threat_time}] MEDIUM THREAT LEVEL ({threat_mid}) reached'
+                                threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
 
                                 print(threat_notification)
                                 socket.sendall(threat_notification.encode('utf-8'))

@@ -9,7 +9,7 @@ from utilities import threat_mgmt
 
 def block_addr(ip_addr, block_time, socket):
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] max failed ssh attempts reached for \"{ip_addr}\", blocking for {block_time} seconds"
+    block_notification = f"[{time_of_block}] possible INCIDENT at \"{ip_addr}\", blocking ssh for {block_time} seconds"
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -70,7 +70,6 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                             # Update threat level
                             threat_mgmt.update_threat('failed_ssh', threat_file)
 
-                        # addr_failed_attempts = f"failed attempts: {failed_attempts[data_attr['addr']]}"
                         notification = f"[{current_time}] FAILED ssh attempt ({failed_attempts[data_attr['addr']]}) to \"{data_attr['acct']}\" by \"{data_attr['hostname']}\""
 
                         print(notification)
@@ -82,7 +81,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                         if current_threat_level >= int(threat_max):
                             # Block IP if max level threat
                             threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] MAX THREAT LEVEL ({threat_max}) reached, possible incident'
+                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
 
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
@@ -95,7 +94,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                         elif current_threat_level >= int(threat_mid):
                             # Only send alert of event if mid level threat
                             threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] MEDIUM THREAT LEVEL ({threat_mid}) reached'
+                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
 
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
