@@ -29,7 +29,24 @@ def init_auditd_rule(auditd_rule):
     print('auditd watch for firewalld_watcher created')
 
 
-def start_firewalld_watcher(log_file, socket):
+def block_firewalld(added_services, threat_file, socket):
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    block_notification = f"[{time_of_block}] possible INCIDENT, removing recently-added services from firewalld"
+  
+    print(block_notification)
+    socket.sendall(block_notification.encode('utf-8'))
+
+    for service in added_services:
+        cmd = ['firewall-cmd', f'--remove-service={service}']
+        exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Updated threat based on removed rules
+    threat_mgmt.update_threat('clear_add_unallowed_service', threat_file, len(added_services))
+
+
+def start_firewalld_watcher(log_file, socket, block_time, threat_file, unallowed_services_list, threat_max, threat_mid, threat_default):
+    services_added = []
+
     auditd_rule = '-w /usr/bin/firewall-cmd -p x -k firewall-cmd'
     auditd_rule_exists = check_auditd_rule(auditd_rule)
 
@@ -69,8 +86,34 @@ def start_firewalld_watcher(log_file, socket):
                                 command = command.split('=')
                                 added_service = command[2]
 
-                                notification = f"[{current_time}] service \"{added_service}\" opened by firewalld"
+                                # Only trigger on added services on blacklist
+                                if added_service in unallowed_services_list:
+                                    # Update threat on blacklisted service
+                                    threat_mgmt.update_threat('add_unallowed_service', threat_file)
+                                    services_added.append(added_service)
 
-                                print(notification)
-                                socket.sendall(notification.encode('utf-8'))
-      
+                                    notification = f"[{current_time}] service \"{added_service}\" opened by firewalld"
+
+                                    print(notification)
+                                    socket.sendall(notification.encode('utf-8'))
+                                    
+                                    # Evaluate threat level
+                                    current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                                    if current_threat_level >= int(threat_max):
+                                        # Undo previous firewall rule and block firewall-cmd command
+                                        threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+
+                                        print(threat_notification)
+                                        socket.sendall(threat_notification.encode('utf-8'))
+
+                                        block_firewalld(services_added, threat_file, socket)
+                                        services_added.clear()
+                                    elif current_threat_level >= int(threat_mid):
+                                        # Only send alert of event if mid level threat
+                                        threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                                        threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
+
+                                        print(threat_notification)
+                                        socket.sendall(threat_notification.encode('utf-8'))
