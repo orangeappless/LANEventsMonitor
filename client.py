@@ -11,6 +11,7 @@ from modules import dir_watcher
 from modules import user_watcher
 from modules import root_watcher
 from modules import ssh_watcher
+from modules import firewalld_watcher
 
 
 def parse_config(config_file_path):
@@ -106,6 +107,17 @@ def main():
         args=(ssh_watcher_audit, secure_socket, ssh_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(ssh_watcher_thread)
+
+    # Monitor changes to firewalld
+    firewalld_watcher_configs = dict(configs.items('FIREWALLD_WATCHER'))
+    firewalld_watcher_audit = firewalld_watcher_configs['log']
+    unallowed_services = firewalld_watcher_configs['unallowed_services'].split(',')
+    unallowed_ports = firewalld_watcher_configs['unallowed_ports'].split(',')
+    firewalld_watcher_thread = Thread(
+        target=firewalld_watcher.start_firewalld_watcher,
+        args=(firewalld_watcher_audit, secure_socket, threat_file, unallowed_services, unallowed_ports, max_threat, mid_threat, default_threat)
+    )
+    thread_list.append(firewalld_watcher_thread)
 
     # Start all watchers
     for thread in thread_list:
