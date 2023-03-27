@@ -1,6 +1,7 @@
 import pyinotify
 import socket
 from datetime import datetime
+from threading import Timer
 
 from utilities import threat_mgmt
 
@@ -52,11 +53,19 @@ class EventHandler(pyinotify.ProcessEvent):
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
     
+            lower_threat_timer = Timer(int(block_time), self.lower_threat)
+            lower_threat_timer.start()
+
     def process_IN_CLOSE_WRITE(self, event):
         if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name or '~' in event.name:
             return
 
         if (event.name).isdigit():
+            return
+        
+        # Ignore modifications of the 'btmp' log - this contains failed login attempts, and is
+        # monitored by other watchers in the app
+        if 'btmp' in event.name:
             return
 
         # Change in file in directory
@@ -84,14 +93,26 @@ class EventHandler(pyinotify.ProcessEvent):
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
 
+        lower_threat_timer = Timer(int(block_time), self.lower_threat)
+        lower_threat_timer.start()
+
     def send_notif(self, notification):
         socket_.sendall(notification.encode("utf-8"))
 
+    def lower_threat(self):
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        notification = f'[{current_time}] threat from directory modification/deletion lowered'
 
-def start_watcher(directories, socket, threat_file, threat_max, threat_mid, threat_default):
+        print(notification)
+
+        threat_mgmt.update_threat('clear_dir_modification', threat_file_)
+
+
+def start_watcher(directories, socket, time_block, threat_file, threat_max, threat_mid, threat_default):
     # Assign globals to be used, should prolly fix this eventually
-    global socket_, threat_file_, max_threat, mid_threat, default_threat
+    global socket_, block_time, threat_file_, max_threat, mid_threat, default_threat
     socket_ = socket
+    block_time = time_block
     threat_file_ = threat_file
     max_threat = threat_max
     mid_threat = threat_mid

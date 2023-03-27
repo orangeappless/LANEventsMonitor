@@ -78,7 +78,7 @@ def main():
     dirs_to_watch = dir_watcher_configs['dirs']
     dir_watcher_thread = Thread(
         target=dir_watcher.start_watcher,
-        args=(dirs_to_watch, secure_socket, threat_file, max_threat, mid_threat, default_threat)
+        args=(dirs_to_watch, secure_socket, dir_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
     )
     thread_list.append(dir_watcher_thread)
 
