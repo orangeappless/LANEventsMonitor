@@ -104,6 +104,7 @@ class EventHandler(pyinotify.ProcessEvent):
         notification = f'[{current_time}] threat from directory modification/deletion lowered'
 
         print(notification)
+        socket_.sendall(notification.encode('utf-8'))
 
         threat_mgmt.update_threat('clear_dir_modification', threat_file_)
 
