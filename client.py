@@ -112,9 +112,10 @@ def main():
     firewalld_watcher_configs = dict(configs.items('FIREWALLD_WATCHER'))
     firewalld_watcher_audit = firewalld_watcher_configs['log']
     unallowed_services = firewalld_watcher_configs['unallowed_services'].split(',')
+    unallowed_ports = firewalld_watcher_configs['unallowed_ports'].split(',')
     firewalld_watcher_thread = Thread(
         target=firewalld_watcher.start_firewalld_watcher,
-        args=(firewalld_watcher_audit, secure_socket, firewalld_watcher_configs['block_time'], threat_file, unallowed_services, max_threat, mid_threat, default_threat)
+        args=(firewalld_watcher_audit, secure_socket, threat_file, unallowed_services, unallowed_ports, max_threat, mid_threat, default_threat)
     )
     thread_list.append(firewalld_watcher_thread)
 
