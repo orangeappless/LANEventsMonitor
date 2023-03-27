@@ -49,13 +49,13 @@ def handle_client(socket):
         except:
             print("No data from client")
 
-        remote_client = socket.getpeername()[0]
-        print(f'{remote_client} :: {data.decode("utf-8")}')
+        if data:
+            remote_client = socket.getpeername()[0]
+            print(f'{remote_client} :: {data.decode("utf-8")}')
 
         if not data:
-            print(f"[Disconnected] {socket.getpeername()[0]}: {str(socket.getpeername()[1])}")
             thread_count -= 1
-            print(f"Number of threads/clients: {str(thread_count)}")
+            print(f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)")
             break
 
         # socket.sendall(str.encode(response))
@@ -89,11 +89,9 @@ def main():
     while True:
         try:
             client, addr = secure_socket.accept()
-            print(f"[Connected] {addr[0]}: {str(addr[1])}")
-
-            threading.Thread(target=handle_client, args=(client, )).start()
             thread_count += 1
-            print(f"Number of threads/clients: {str(thread_count)}")
+            print(f"{addr[0]} :: connected, {thread_count} current client(s)")
+            threading.Thread(target=handle_client, args=(client, )).start()
         except KeyboardInterrupt:
             print("Keyboard interrupt")
             secure_socket.close()
