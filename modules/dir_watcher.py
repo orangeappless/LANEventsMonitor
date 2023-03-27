@@ -102,8 +102,10 @@ def start_watcher(directories, socket, threat_file, threat_max, threat_mid, thre
     
     notifier = pyinotify.ThreadedNotifier(watch_manager, EventHandler())
 
-    # Iterate over given directory dict
-    for key, dir in directories.items():
+    dirs_to_watch = directories.split(',')
+
+    # Iterate over given directory list
+    for dir in dirs_to_watch:
         watch_manager.add_watch(dir, mask, rec=True)
 
     notifier.start()
