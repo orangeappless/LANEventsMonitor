@@ -20,6 +20,11 @@ def check_auditd_rule(auditd_rule):
 def init_auditd_rule(auditd_rule):
     # Adds specified auditd rule if it doesn't alrady exist
     # auditctl -w /usr/bin/firewall-cmd -p x -k firewall-cmd
+
+    # Clear previous rules first
+    clear_auditd_cmd = ['auditctl', '-D']
+    exec_clear_auditd_cmd = subprocess.run(clear_auditd_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
     auditd_rule_split = auditd_rule.split(' ')
     auditd_rule_split.insert(0, 'auditctl')
     
