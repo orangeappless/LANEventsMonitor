@@ -36,14 +36,16 @@ class EventHandler(pyinotify.ProcessEvent):
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
         notification = f"[{current_time}] DELETED item in watched directory \"{event.pathname}\""
-
         print(notification)
-        self.send_notif(notification)
 
         # Update threat level
         threat_mgmt.update_threat('dir_modification', threat_file_)
 
         current_threat_level = threat_mgmt.get_current_level(threat_file_)
+
+        # Send notification to server only if system is at mid threat or higher
+        if current_threat_level >= int(mid_threat):
+            self.send_notif(notification)
 
         if current_threat_level >= int(max_threat):
             threat_notification = threat_mgmt.create_max_threat_notif(max_threat, current_threat_level)
@@ -63,7 +65,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
         if (event.name).isdigit():
             return
-        
+
         # Ignore modifications of login logs - this contains failed login attempts, and is
         # monitored by other watchers in the app
         login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog']
@@ -73,14 +75,16 @@ class EventHandler(pyinotify.ProcessEvent):
         # Change in file in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
         notification = f"[{current_time}] MODIFIED item in watched directory \"{event.pathname}\""
-
         print(notification)
-        self.send_notif(notification)
 
         # Update threat level
         threat_mgmt.update_threat('dir_modification', threat_file_)
 
         current_threat_level = threat_mgmt.get_current_level(threat_file_)
+
+        # Send notification to server only if system is at mid threat or higher
+        if current_threat_level >= int(mid_threat):
+            self.send_notif(notification)
 
         if current_threat_level >= int(max_threat):
             threat_notification = threat_mgmt.create_max_threat_notif(max_threat, current_threat_level)
@@ -109,7 +113,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
 
 def start_watcher(directories, socket, time_block, threat_file, threat_max, threat_mid, threat_default):
-    # Assign globals to be used, should prolly fix this eventually
+    # Assign globals to be used
     global socket_, block_time, threat_file_, max_threat, mid_threat, default_threat
     socket_ = socket
     block_time = time_block

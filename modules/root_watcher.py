@@ -86,12 +86,13 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             threat_mgmt.update_threat('failed_root', threat_file)
 
                             notification = f"[{current_time}] root login FAILED by \"{data_attr['UID']}\""
-                            
                             print(notification)
-                            socket.sendall(notification.encode('utf-8'))
 
                             # Evaluate threat level
                             current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                            if current_threat_level >= int(threat_mid):
+                                socket.sendall(notification.encode('utf-8'))
 
                             if current_threat_level >= int(threat_max):
                                 threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
@@ -147,11 +148,13 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                                 threat_mgmt.update_threat('failed_wheel', threat_file)
 
                                 notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
-
                                 print(notification)
-                                socket.sendall(notification.encode('utf-8'))
 
                                 current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                                # If at or above mid threat, send notif to server
+                                if current_threat_level >= int(threat_mid):
+                                    socket.sendall(notification.encode('utf-8'))
 
                                 if current_threat_level >= int(threat_max):
                                     # Block `su` at max threat

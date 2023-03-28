@@ -97,12 +97,14 @@ def start_firewalld_watcher(log_file, socket, threat_file, unallowed_services_li
                                     rules_added.append(added_service)
 
                                     notification = f"[{current_time}] service \"{added_service}\" opened by firewalld"
-
                                     print(notification)
-                                    socket.sendall(notification.encode('utf-8'))
                                     
                                     # Evaluate threat level
                                     current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                                    # Only send notification to server if at mid threat or higher
+                                    if current_threat_level >= int(threat_mid):
+                                            socket.sendall(notification.encode('utf-8'))
 
                                     if current_threat_level >= int(threat_max):
                                         # Undo previous firewall rule and block firewall-cmd command
@@ -128,12 +130,14 @@ def start_firewalld_watcher(log_file, socket, threat_file, unallowed_services_li
                                     rules_added.append(added_port)
 
                                     notification = f"[{current_time}] port \"{added_port}\" opened by firewalld"
-
                                     print(notification)
-                                    socket.sendall(notification.encode('utf-8'))
 
                                     current_threat_level = threat_mgmt.get_current_level(threat_file)
                                     
+                                    # Send notification to server if at mid threat or more
+                                    if current_threat_level >= int(threat_mid):
+                                        socket.sendall(notification.encode('utf-8'))
+
                                     if current_threat_level >= int(threat_max):
                                         # Undo previous firewall rule and block firewall-cmd command
                                         threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)

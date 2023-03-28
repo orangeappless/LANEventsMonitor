@@ -100,6 +100,8 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
             new_data = log_file.read()
 
             if new_data:
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+
                 if 'watched-cmd' in new_data:
                     new_data = new_data.split('type=')
 
@@ -130,7 +132,13 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
                         threat_mgmt.update_threat('exec_watched_cmd', threat_file)
                         executed_watched_cmds.append(syscall_attrs['exe'])
 
+                        notification = f"[{current_time}] watchlisted command `{syscall_attrs['exe']}` executed by \"{syscall_attrs['UID']}\""
+                        print(notification)
+
                         current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                        if current_threat_level >= int(threat_mid):
+                            socket.sendall(notification.encode('utf-8'))
 
                         if current_threat_level >= int(threat_max):
                             # Undo previous firewall rule and block firewall-cmd command

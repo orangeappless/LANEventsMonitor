@@ -75,12 +75,13 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                             threat_mgmt.update_threat('failed_ssh', threat_file)
 
                         notification = f"[{current_time}] FAILED ssh attempt to \"{data_attr['acct']}\" by \"{data_attr['hostname']}\""
-
                         print(notification)
-                        socket.sendall(notification.encode('utf-8'))
 
                         # Evaluate threat level, and block address if threshold reached
                         current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                        if current_threat_level >= int(threat_mid):
+                            socket.sendall(notification.encode('utf-8'))
 
                         if current_threat_level >= int(threat_max):
                             # Block IP if max level threat

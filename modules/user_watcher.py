@@ -61,16 +61,22 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                     data_attr = audit_parser.get_audit_attrs(new_data)
 
                     notification = f"[{current_time}] USER ADDED: \"{data_attr['acct']}\" by \"{data_attr['AUID']}\""
-
                     print(notification)
-                    socket.sendall(notification.encode('utf-8'))
+                    
+                    current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                    if current_threat_level >= int(threat_mid):
+                        socket.sendall(notification.encode('utf-8'))
                 elif new_data.startswith('type=DEL_GROUP'):
                     data_attr = audit_parser.get_audit_attrs(new_data)
 
                     notification = f"[{current_time}] USER DELETED: \"{data_attr['acct']}\" by \"{data_attr['AUID']}\""
-
                     print(notification)
-                    socket.sendall(notification.encode('utf-8'))           
+                    
+                    current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                    if current_threat_level >= int(threat_mid):
+                        socket.sendall(notification.encode('utf-8'))   
                 # Check for additions to `wheel` group
                 elif new_data.startswith('type=USER_MGMT') and 'add-user-to-group' in new_data and 'grp="wheel"' in new_data:
                     data_attr = audit_parser.get_audit_attrs(new_data)
@@ -81,11 +87,12 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                         threat_mgmt.update_threat('add_wheel_user', threat_file)
 
                         notification = f"[{current_time}] user \"{data_attr['acct']}\" added to `wheel` group"
-
                         print(notification)
-                        socket.sendall(notification.encode('utf-8'))
 
                         current_threat_level = threat_mgmt.get_current_level(threat_file)
+
+                        if current_threat_level >= int(threat_mid):
+                            socket.sendall(notification.encode('utf-8'))
 
                         if current_threat_level >= int(threat_max):
                             threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
