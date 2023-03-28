@@ -27,6 +27,12 @@ class EventHandler(pyinotify.ProcessEvent):
 
         if (event.name).isdigit():
             return
+        
+        # Ignore modifications of login logs - this contains failed login attempts, and is
+        # monitored by other watchers in the app
+        login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog']
+        if event.name in login_logs:
+            return
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
@@ -63,9 +69,10 @@ class EventHandler(pyinotify.ProcessEvent):
         if (event.name).isdigit():
             return
         
-        # Ignore modifications of the 'btmp' log - this contains failed login attempts, and is
+        # Ignore modifications of login logs - this contains failed login attempts, and is
         # monitored by other watchers in the app
-        if 'btmp' in event.name:
+        login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog']
+        if event.name in login_logs:
             return
 
         # Change in file in directory
