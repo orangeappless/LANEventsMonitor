@@ -7,6 +7,7 @@ import configparser
 from threading import Thread
 import ssl
 import subprocess
+from pathlib import Path
 
 from modules import dir_watcher
 from modules import user_watcher
@@ -24,6 +25,9 @@ def parse_config(config_file_path):
 
 
 def init_threat_file(threat_file):
+    filename = Path(f'utilities/{threat_file}')
+    filename.touch(exist_ok=True)
+
     with open(f'utilities/{threat_file}', 'r+') as file:
         file.seek(0)
         file.write(str(0) + '\n')
