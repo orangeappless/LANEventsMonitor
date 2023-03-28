@@ -6,12 +6,14 @@ import socket
 import configparser
 from threading import Thread
 import ssl
+import subprocess
 
 from modules import dir_watcher
 from modules import user_watcher
 from modules import root_watcher
 from modules import ssh_watcher
 from modules import firewalld_watcher
+from modules import cmd_watcher
 
 
 def parse_config(config_file_path):
@@ -26,6 +28,11 @@ def init_threat_file(threat_file):
         file.seek(0)
         file.write(str(0) + '\n')
         file.truncate()
+
+
+def remove_auditd_rules():
+    clear_auditd_cmd = ['auditctl', '-D']
+    exec_clear_auditd_cmd = subprocess.run(clear_auditd_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
 
 def create_secure_socket(socket):
@@ -45,6 +52,9 @@ def main():
     # Reinitialize threat file on each startup; sets current threat of client to 0
     threat_file = dict(configs.items('THREAT_MGMT'))['threat_file']     # File which stores client's current threat level
     init_threat_file(threat_file)
+
+    # Clean auditd watches - we will add our own watches for this application
+    remove_auditd_rules()
 
     # Set threat levels
     threat_levels_config = dict(configs.items('THREAT_LEVELS'))
@@ -119,6 +129,17 @@ def main():
         args=(firewalld_watcher_audit, secure_socket, threat_file, unallowed_services, unallowed_ports, max_threat, mid_threat, default_threat)
     )
     thread_list.append(firewalld_watcher_thread)
+
+    # Monitor certain commands
+    cmd_watcher_configs = dict(configs.items('CMD_WATCHER'))
+    cmd_watcher_audit = cmd_watcher_configs['log']
+    blocked_cmds = cmd_watcher_configs['blocked_cmds']
+    watched_cmds = cmd_watcher_configs['watched_cmds']
+    cmd_watcher_thread = Thread(
+        target=cmd_watcher.start_cmd_watcher,
+        args=(cmd_watcher_audit, secure_socket, threat_file, blocked_cmds, watched_cmds, max_threat, mid_threat, default_threat, cmd_watcher_configs['block_time'])
+    )
+    thread_list.append(cmd_watcher_thread)
 
     # Start all watchers
     for thread in thread_list:
