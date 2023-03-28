@@ -30,11 +30,15 @@ def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file,
 
 def remove_block_usermod_wheel(wheel_user, user, times_attempted, threat_file, socket):
     time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M")
-    unblock_notification = f"[{time_of_unblock}] unlocking user \"{wheel_user}\""
+    unblock_notification = f"[{time_of_unblock}] unlocking user \"{wheel_user}\" and removing from `wheel`"
 
     # Unlock user
     unlock_user_cmd = ['passwd', '-u', f'{wheel_user}']
     exec_unlock_user_cmd = subprocess.run(unlock_user_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+    # Remove user from `wheel`
+    remove_wheel_cmd = ['gpasswd', '-d', f'{wheel_user}', 'wheel']
+    exec_remove_wheel_cmd = subprocess.run(remove_wheel_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     # Adjust threat
     threat_mgmt.update_threat('clear_add_wheel_user', threat_file, times_attempted)
