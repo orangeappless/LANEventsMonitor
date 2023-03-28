@@ -11,7 +11,7 @@ def block_su(operation, user, block_time, times_failed, threat_file, socket):
     # setfacl -m u:test:--- /bin/mkdir 
     # setfacl -x u:test /usr/bin/su 
 
-    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M")
     block_notification = f"[{time_of_block}] possible INCIDENT, blocking `su` command for {user}"
     
     print(block_notification)
@@ -27,7 +27,7 @@ def block_su(operation, user, block_time, times_failed, threat_file, socket):
 
 
 def unblock_su(operation, user, times_failed, threat_file, socket):
-    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M")
     unblock_notification = f"[{time_of_unblock}] unblocking `su` command for {user}"
 
     cmd = ['setfacl', '-x', f'u:{user}', '/usr/bin/su']
@@ -63,7 +63,7 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
             new_data = log_file.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
                 # Parse for root login commands in log entry
                 if 'USER_CMD' in new_data:

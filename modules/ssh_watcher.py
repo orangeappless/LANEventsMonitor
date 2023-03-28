@@ -8,7 +8,7 @@ from utilities import threat_mgmt
 
 
 def block_addr(ip_addr, block_time, socket):
-    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if int(block_time) > 0:
         block_notification = f"[{time_of_block}] possible INCIDENT at \"{ip_addr}\", blocking ssh for {block_time} seconds"
@@ -23,7 +23,7 @@ def block_addr(ip_addr, block_time, socket):
 
 
 def remove_rule(ip_addr, socket, threat_file):
-    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M")
     unblock_notification = f"[{time_of_unblock}] unblocking ssh rule for \"{ip_addr}\""
 
     cmd = ['iptables', '-D', 'INPUT', '-s', ip_addr, '-j', 'DROP']
@@ -56,7 +56,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
             new_data = log_file.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
                 if 'USER_AUTH' and 'PAM:authentication' in new_data and '/usr/bin/su' not in new_data:
                     data_attr = audit_parser.get_audit_attrs(new_data)

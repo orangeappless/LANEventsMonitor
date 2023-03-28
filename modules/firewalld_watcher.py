@@ -30,7 +30,7 @@ def init_auditd_rule(auditd_rule):
 
 
 def undo_firewalld_rule(added_services, threat_file, socket):
-    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M")
     block_notification = f"[{time_of_block}] possible INCIDENT, removing recently-added services/ports from firewalld"
   
     print(block_notification)
@@ -67,7 +67,7 @@ def start_firewalld_watcher(log_file, socket, threat_file, unallowed_services_li
             new_data = log.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
                 if 'type=EXECVE' in new_data and 'firewall-cmd' in new_data:
                     data_list = new_data.split('\n')

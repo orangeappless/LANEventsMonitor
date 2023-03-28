@@ -57,7 +57,7 @@ def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
         block_cmd = ['setfacl', '-m', f'u:{user}:---', f'{cmd}']
         exec_block_cmd = subprocess.run(block_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M")
     block_notification = f"[{time_of_block}] possible INCIDENT, blocking watchlisted command(s) for \"{user}\""
     
     print(block_notification)
@@ -69,7 +69,7 @@ def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
 
 
 def unblock_watched_cmds(executed_cmds, user, threat_file, socket):
-    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M")
     unblock_notification = f"[{time_of_unblock}] unblocking watchlisted command(s) for {user}"
 
     for cmd in executed_cmds:
@@ -100,7 +100,7 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
             new_data = log_file.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
                 if 'watched-cmd' in new_data:
                     new_data = new_data.split('type=')

@@ -19,14 +19,14 @@ def get_current_level(threat_file):
 
 
 def create_max_threat_notif(max_threat, current_threat):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
     notification = f'[{current_time}] system at, or above, MAX THREAT LEVEL of ({max_threat}), possible INCIDENT ::: {current_threat} T-LVL'
 
     return notification
 
 
 def create_mid_threat_notif(mid_threat, current_threat):
-    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
     notification = f'[{current_time}] system at MEDIUM THREAT LEVEL of ({mid_threat}) ::: {current_threat} T-LVL'
 
     return notification

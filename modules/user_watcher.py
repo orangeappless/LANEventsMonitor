@@ -8,7 +8,7 @@ from utilities import threat_mgmt
 
 
 def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file, socket):
-    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M")
 
     if int(block_time) > 0:
         block_notification = f"[{time_of_block}] possible INCIDENT, locking new `wheel` user \"{wheel_user}\" for {block_time} seconds"
@@ -29,7 +29,7 @@ def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file,
 
 
 def remove_block_usermod_wheel(wheel_user, user, times_attempted, threat_file, socket):
-    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M")
     unblock_notification = f"[{time_of_unblock}] unlocking user \"{wheel_user}\""
 
     # Unlock user
@@ -55,7 +55,7 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
             new_data = log_file.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
 
                 if new_data.startswith('type=ADD_USER'):
                     data_attr = audit_parser.get_audit_attrs(new_data)

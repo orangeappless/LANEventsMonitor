@@ -14,7 +14,7 @@ class EventHandler(pyinotify.ProcessEvent):
             return
         
         # Creation in directory
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
         notification = f"[{current_time}] CREATED: {event.pathname}"
 
         print(notification)
@@ -34,7 +34,7 @@ class EventHandler(pyinotify.ProcessEvent):
             return
 
         # Deletion in directory
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
         notification = f"[{current_time}] DELETED item in watched directory \"{event.pathname}\""
         print(notification)
 
@@ -73,7 +73,7 @@ class EventHandler(pyinotify.ProcessEvent):
             return
 
         # Change in file in directory
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
         notification = f"[{current_time}] MODIFIED item in watched directory \"{event.pathname}\""
         print(notification)
 
@@ -103,7 +103,7 @@ class EventHandler(pyinotify.ProcessEvent):
         socket_.sendall(notification.encode("utf-8"))
 
     def lower_threat(self):
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
         notification = f'[{current_time}] threat from directory modification/deletion lowered'
 
         print(notification)
