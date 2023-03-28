@@ -9,7 +9,11 @@ from utilities import threat_mgmt
 
 def block_addr(ip_addr, block_time, socket):
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] possible INCIDENT at \"{ip_addr}\", blocking ssh for {block_time} seconds"
+
+    if int(block_time) > 0:
+        block_notification = f"[{time_of_block}] possible INCIDENT at \"{ip_addr}\", blocking ssh for {block_time} seconds"
+    else:
+        block_notification = f"[{time_of_block}] possible INCIDENT at \"{ip_addr}\", blocking ssh indefinitely"
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -70,7 +74,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                             # Update threat level
                             threat_mgmt.update_threat('failed_ssh', threat_file)
 
-                        notification = f"[{current_time}] FAILED ssh attempt ({failed_attempts[data_attr['addr']]}) to \"{data_attr['acct']}\" by \"{data_attr['hostname']}\""
+                        notification = f"[{current_time}] FAILED ssh attempt to \"{data_attr['acct']}\" by \"{data_attr['hostname']}\""
 
                         print(notification)
                         socket.sendall(notification.encode('utf-8'))
@@ -88,9 +92,10 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
 
                             block_addr(data_attr['addr'], block_time, socket)
 
-                            # Set timer to drop rule after n time
-                            unblock_timer = Timer(int(block_time), remove_rule, args=(data_attr['addr'], socket, threat_file))
-                            unblock_timer.start()
+                            # Set timer to drop rule after n time - unless if block_time is set to 0, then block indefinitely
+                            if int(block_time) > 0:
+                                unblock_timer = Timer(int(block_time), remove_rule, args=(data_attr['addr'], socket, threat_file))
+                                unblock_timer.start()
                         elif current_threat_level >= int(threat_mid):
                             # Only send alert of event if mid level threat
                             threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")

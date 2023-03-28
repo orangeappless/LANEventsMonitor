@@ -100,8 +100,9 @@ class EventHandler(pyinotify.ProcessEvent):
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
 
-        lower_threat_timer = Timer(int(block_time), self.lower_threat)
-        lower_threat_timer.start()
+        if int(block_time) > 0:
+            lower_threat_timer = Timer(int(block_time), self.lower_threat)
+            lower_threat_timer.start()
 
     def send_notif(self, notification):
         socket_.sendall(notification.encode("utf-8"))

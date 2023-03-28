@@ -20,9 +20,10 @@ def block_su(operation, user, block_time, times_failed, threat_file, socket):
     cmd = ['setfacl', '-m', f'u:{user}:---', '/usr/bin/su']
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    # Remove this rule after a set amount of time
-    unblock_timer = Timer(int(block_time), unblock_su, args=(operation, user, times_failed, threat_file, socket))
-    unblock_timer.start()
+    # Remove this rule after a set amount of time; however, if block_time is set to 0 (or less), block indefinitely
+    if int(block_time) > 0:
+        unblock_timer = Timer(int(block_time), unblock_su, args=(operation, user, times_failed, threat_file, socket))
+        unblock_timer.start()
 
 
 def unblock_su(operation, user, times_failed, threat_file, socket):
