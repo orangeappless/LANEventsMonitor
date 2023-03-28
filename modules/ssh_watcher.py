@@ -84,9 +84,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
 
                         if current_threat_level >= int(threat_max):
                             # Block IP if max level threat
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
-
+                            threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
 
@@ -98,9 +96,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                                 unblock_timer.start()
                         elif current_threat_level >= int(threat_mid):
                             # Only send alert of event if mid level threat
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
-
+                            threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
                     elif data_attr['terminal'] == 'ssh' and data_attr['res'] == 'success' and data_attr['addr'] in failed_attempts:

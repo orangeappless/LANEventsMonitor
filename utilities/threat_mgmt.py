@@ -1,4 +1,5 @@
 import configparser
+from datetime import datetime
 
 
 def get_action_levels():
@@ -15,6 +16,20 @@ def get_current_level(threat_file):
         current_threat = int(file.read())
 
     return current_threat
+
+
+def create_max_threat_notif(max_threat, current_threat):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    notification = f'[{current_time}] system at, or above, MAX THREAT LEVEL of ({max_threat}), possible INCIDENT ::: {current_threat} T-LVL'
+
+    return notification
+
+
+def create_mid_threat_notif(mid_threat, current_threat):
+    current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    notification = f'[{current_time}] system at MEDIUM THREAT LEVEL of ({mid_threat}) ::: {current_threat} T-LVL'
+
+    return notification
 
 
 def update_threat(action, threat_file, iters=1):

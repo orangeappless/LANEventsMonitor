@@ -1,5 +1,4 @@
 import pyinotify
-import socket
 from datetime import datetime
 from threading import Timer
 
@@ -36,7 +35,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
-        notification = f"[{current_time}] DELETED: {event.pathname}"
+        notification = f"[{current_time}] DELETED item in watched directory \"{event.pathname}\""
 
         print(notification)
         self.send_notif(notification)
@@ -47,15 +46,11 @@ class EventHandler(pyinotify.ProcessEvent):
         current_threat_level = threat_mgmt.get_current_level(threat_file_)
 
         if current_threat_level >= int(max_threat):
-            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({max_threat}), possible INCIDENT'
-
+            threat_notification = threat_mgmt.create_max_threat_notif(max_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
         elif current_threat_level >= int(mid_threat):
-            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({mid_threat})'
-
+            threat_notification = threat_mgmt.create_mid_threat_notif(mid_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
     
@@ -77,7 +72,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
         # Change in file in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")  
-        notification = f"[{current_time}] MODIFIED: {event.pathname}"
+        notification = f"[{current_time}] MODIFIED item in watched directory \"{event.pathname}\""
 
         print(notification)
         self.send_notif(notification)
@@ -88,15 +83,11 @@ class EventHandler(pyinotify.ProcessEvent):
         current_threat_level = threat_mgmt.get_current_level(threat_file_)
 
         if current_threat_level >= int(max_threat):
-            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({max_threat}), possible INCIDENT'
-
+            threat_notification = threat_mgmt.create_max_threat_notif(max_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
         elif current_threat_level >= int(mid_threat):
-            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({mid_threat})'
-
+            threat_notification = threat_mgmt.create_mid_threat_notif(mid_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
 

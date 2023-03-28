@@ -3,7 +3,6 @@ import os
 import subprocess
 from threading import Timer
 
-from utilities import audit_parser
 from utilities import threat_mgmt
 
 
@@ -59,7 +58,7 @@ def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
         exec_block_cmd = subprocess.run(block_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
     time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] possible INCIDENT, blocking watchlisted command(s) for {user}"
+    block_notification = f"[{time_of_block}] possible INCIDENT, blocking watchlisted command(s) for \"{user}\""
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -101,8 +100,6 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
             new_data = log_file.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-
                 if 'watched-cmd' in new_data:
                     new_data = new_data.split('type=')
 
@@ -137,9 +134,7 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
 
                         if current_threat_level >= int(threat_max):
                             # Undo previous firewall rule and block firewall-cmd command
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
-
+                            threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
 
@@ -147,8 +142,6 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
                             executed_watched_cmds = []
                         elif current_threat_level >= int(threat_mid):
                             # Only send alert of event if mid level threat
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
-
+                            threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))                    

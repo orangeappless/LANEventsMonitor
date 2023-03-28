@@ -88,17 +88,13 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                         current_threat_level = threat_mgmt.get_current_level(threat_file)
 
                         if current_threat_level >= int(threat_max):
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
-
+                            threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
         
                             block_usermod_wheel(data_attr['acct'], data_attr['UID'], block_time, wheel_group_attempts, threat_file, socket)
                             wheel_group_attempts = 0
                         elif current_threat_level >= int(threat_mid):
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
-
+                            threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
