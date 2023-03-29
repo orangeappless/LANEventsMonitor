@@ -47,13 +47,14 @@ class EventHandler(pyinotify.ProcessEvent):
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
-        notification = f"[{current_time}] DELETED item in watched directory \"{event.pathname}\""
-        print(notification)
 
         # Update threat level
         threat_mgmt.update_threat('dir_modification', threat_file_)
-
         current_threat_level = threat_mgmt.get_current_level(threat_file_)
+        action_threat = threat_mgmt.get_action_levels()['dir_modification']
+
+        notification = f"[{current_time}] DELETED item in watched directory \"{event.pathname}\" ::: +{action_threat} [{current_threat_level}]"
+        print(notification)
 
         # Send notification to server only if system is at mid threat or higher
         if current_threat_level >= int(mid_threat):
@@ -93,14 +94,15 @@ class EventHandler(pyinotify.ProcessEvent):
         self.last_modified_time = modified_time
 
         # Change in file in directory
-        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
-        notification = f"[{current_time}] MODIFIED item in watched directory \"{event.pathname}\""
-        print(notification)
+        current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
         # Update threat level
         threat_mgmt.update_threat('dir_modification', threat_file_)
-
         current_threat_level = threat_mgmt.get_current_level(threat_file_)
+        action_threat = threat_mgmt.get_action_levels()['dir_modification']
+
+        notification = f"[{current_time}] MODIFIED item in watched directory \"{event.pathname}\" ::: +{action_threat} [{current_threat_level}]"
+        print(notification)
 
         # Send notification to server only if system is at mid threat or higher
         if current_threat_level >= int(mid_threat):
@@ -124,12 +126,14 @@ class EventHandler(pyinotify.ProcessEvent):
 
     def lower_threat(self):
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
-        notification = f'[{current_time}] threat from directory modification/deletion lowered'
-
-        print(notification)
-        socket_.sendall(notification.encode('utf-8'))
 
         threat_mgmt.update_threat('clear_dir_modification', threat_file_)
+        current_threat_level = threat_mgmt.get_current_level(threat_file_)
+        action_threat = threat_mgmt.get_action_levels()['clear_dir_modification']
+
+        notification = f'[{current_time}] threat from directory modification/deletion lowered ::: {action_threat} [{current_threat_level}]'
+        print(notification)
+        socket_.sendall(notification.encode('utf-8'))
 
 
 def start_watcher(directories, socket, time_block, threat_file, threat_max, threat_mid, threat_default):

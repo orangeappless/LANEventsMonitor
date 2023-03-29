@@ -155,14 +155,13 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                     data_attr = audit_parser.get_audit_attrs(new_data)
 
                     if data_attr['grp'] == 'wheel':
-                        wheel_group_attempts += 1
-
                         threat_mgmt.update_threat('add_wheel_user', threat_file)
-
-                        notification = f"[{current_time}] user \"{data_attr['acct']}\" added to `wheel` group"
-                        print(notification)
-
                         current_threat_level = threat_mgmt.get_current_level(threat_file)
+                        action_threat = threat_mgmt.get_action_levels()['add_wheel_user']
+                        wheel_group_attempts += 1
+                        
+                        notification = f"[{current_time}] user \"{data_attr['acct']}\" added to `wheel` group ::: +{action_threat} [{current_threat_level}]"
+                        print(notification)
 
                         if current_threat_level >= int(threat_mid):
                             socket.sendall(notification.encode('utf-8'))
