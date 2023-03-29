@@ -141,7 +141,7 @@ def main():
     watched_cmds = cmd_watcher_configs['watched_cmds']
     cmd_watcher_thread = Thread(
         target=cmd_watcher.start_cmd_watcher,
-        args=(cmd_watcher_audit, secure_socket, threat_file, blocked_cmds, watched_cmds, max_threat, mid_threat, default_threat, cmd_watcher_configs['block_time'])
+        args=(cmd_watcher_audit, secure_socket, threat_file, blocked_cmds, watched_cmds, max_threat, mid_threat, default_threat, cmd_watcher_configs['block_time'], cmd_watcher_configs['passive_lower_time'])
     )
     thread_list.append(cmd_watcher_thread)
 
