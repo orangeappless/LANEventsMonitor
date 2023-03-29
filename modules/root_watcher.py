@@ -80,16 +80,14 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             threat_mgmt.update_threat('success_root', threat_file, failed_root_attempts)
                             failed_root_attempts = 0
                         elif data_attr['res'] == 'failed':
-                            failed_root_attempts += 1
-                            
                             # Update threat level
                             threat_mgmt.update_threat('failed_root', threat_file)
-
-                            notification = f"[{current_time}] root login FAILED by \"{data_attr['UID']}\""
-                            print(notification)
-
-                            # Evaluate threat level
                             current_threat_level = threat_mgmt.get_current_level(threat_file)
+                            action_threat = threat_mgmt.get_action_levels()['failed_root']
+                            failed_root_attempts += 1
+
+                            notification = f"[{current_time}] root login FAILED by \"{data_attr['UID']}\" ::: +{action_threat} [{current_threat_level}]"
+                            print(notification)
 
                             if current_threat_level >= int(threat_mid):
                                 socket.sendall(notification.encode('utf-8'))
@@ -156,13 +154,13 @@ def start_root_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             
                             # If the account is not locked, proceed as intended
                             if 'Password locked.' not in output:
-                                failed_wheel_attempts += 1
                                 threat_mgmt.update_threat('failed_wheel', threat_file)
-
-                                notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\""
-                                print(notification)
-
                                 current_threat_level = threat_mgmt.get_current_level(threat_file)
+                                action_threat = threat_mgmt.get_action_levels()['failed_wheel']
+                                failed_wheel_attempts += 1
+
+                                notification = f"[{current_time}] `wheel` user \"{data_attr['acct']}\" login FAILED by \"{data_attr['UID']}\" ::: +{action_threat} [{current_threat_level}]"
+                                print(notification)
 
                                 # If at or above mid threat, send notif to server
                                 if current_threat_level >= int(threat_mid):

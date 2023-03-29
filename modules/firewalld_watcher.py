@@ -94,13 +94,12 @@ def start_firewalld_watcher(log_file, socket, threat_file, unallowed_services_li
                                 if added_service in unallowed_services_list:
                                     # Update threat on blacklisted service
                                     threat_mgmt.update_threat('add_unallowed_service', threat_file)
+                                    current_threat_level = threat_mgmt.get_current_level(threat_file)
+                                    action_threat = threat_mgmt.get_action_levels()['add_unallowed_service']
                                     rules_added.append(added_service)
 
-                                    notification = f"[{current_time}] service \"{added_service}\" opened by firewalld"
+                                    notification = f"[{current_time}] service \"{added_service}\" opened by firewalld::: +{action_threat} [{current_threat_level}]"
                                     print(notification)
-                                    
-                                    # Evaluate threat level
-                                    current_threat_level = threat_mgmt.get_current_level(threat_file)
 
                                     # Only send notification to server if at mid threat or higher
                                     if current_threat_level >= int(threat_mid):
@@ -139,13 +138,13 @@ def start_firewalld_watcher(log_file, socket, threat_file, unallowed_services_li
                                 
                                 if added_port in unallowed_ports_list:
                                     threat_mgmt.update_threat('add_unallowed_port', threat_file)
+                                    current_threat_level = threat_mgmt.get_current_level(threat_file)
+                                    action_threat = threat_mgmt.get_action_levels()['add_unallowed_port']
                                     rules_added.append(added_port)
 
-                                    notification = f"[{current_time}] port \"{added_port}\" opened by firewalld"
+                                    notification = f"[{current_time}] port \"{added_port}\" opened by firewalld ::: +{action_threat} [{current_threat_level}]"
                                     print(notification)
 
-                                    current_threat_level = threat_mgmt.get_current_level(threat_file)
-                                    
                                     # Send notification to server if at mid threat or more
                                     if current_threat_level >= int(threat_mid):
                                         socket.sendall(notification.encode('utf-8'))

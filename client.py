@@ -8,6 +8,7 @@ from threading import Thread
 import ssl
 import subprocess
 from pathlib import Path
+import time
 
 from modules import dir_watcher
 from modules import user_watcher
@@ -148,6 +149,7 @@ def main():
     # Start all watchers
     for thread in thread_list:
         thread.start()
+        time.sleep(0.25)
 
     while True: 
         data = secure_socket.recv(4096)
