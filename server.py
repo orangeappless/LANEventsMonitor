@@ -1,13 +1,12 @@
 #!/usr/bin/env python3
 
 
-import sys
+import sys, os
 import argparse
 import socket
 import threading
 import ssl
 import tkinter as tk
-import os
 
 
 # Set up window
@@ -19,6 +18,7 @@ text_widget.pack(fill=tk.BOTH, expand=True)
 text_widget.pack_propagate(False)
 
 thread_count = 0        # Track number of threads/clients
+connected_clients = []  # Stores clients
 
 
 def parse_args():
@@ -68,12 +68,11 @@ def handle_client(socket):
 
         if not data:
             thread_count -= 1
+            connected_clients.remove(socket)
             print(f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)")
             text_widget.insert(tk.END, f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)\n")
             text_widget.see(tk.END)
             break
-
-        # socket.sendall(str.encode(response))
 
     socket.close()
 
@@ -107,11 +106,12 @@ def start_server():
     while True:
         try:
             client, addr = secure_socket.accept()
-            print(client, addr)
+            connected_clients.append(client)
             thread_count += 1
             print(f"{addr[0]} :: connected, {thread_count} current client(s)")
             text_widget.insert(tk.END, f"{addr[0]} :: connected, {thread_count} current client(s)\n")
             text_widget.see(tk.END)
+            
             threading.Thread(target=handle_client, args=(client, )).start()
         except KeyboardInterrupt:
             print("Keyboard interrupt")
@@ -135,6 +135,9 @@ def stop_server():
         secure_socket.close()
     except:
         pass
+
+    for client in connected_clients:
+        client.send('$SHUTDOWN'.encode('utf-8'))
 
     root.destroy()
     os._exit(0)

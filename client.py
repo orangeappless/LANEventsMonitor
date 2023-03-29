@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 
 
-import sys
+import sys, os
 import socket
 import configparser
 from threading import Thread
@@ -149,14 +149,20 @@ def main():
     for thread in thread_list:
         thread.start()
 
-    # while True:
-    #     data = input("> ")
-    #     socket_.send(str.encode(data))
-    
-    #     res = socket_.recv(4096)
-    #     print(res.decode("utf-8"))
+    while True: 
+        data = secure_socket.recv(4096)
 
-    # socket_.close()
+        if data.decode('utf-8') == '$SHUTDOWN':
+            print('\nshutdown signal received, exiting...')
+            secure_socket.close()
+            break
+        elif not data:
+            print('\nunexpected server shutdown, exiting...')
+            secure_socket.close()
+            break
+
+    secure_socket.close()
+    os._exit(0)
 
 
 if __name__ == "__main__":
@@ -164,4 +170,4 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Exiting program...")
-        sys.exit()
+        os._exit(0)
