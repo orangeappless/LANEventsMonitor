@@ -80,7 +80,7 @@ class EventHandler(pyinotify.ProcessEvent):
 
         # Ignore modifications of login logs - this contains failed login attempts, and is
         # monitored by other watchers in the app
-        login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog']
+        login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog', 'sssd.log', 'sssd_nss.log', 'sssd_implicit_files.log']
         if event.name in login_logs:
             return
         
