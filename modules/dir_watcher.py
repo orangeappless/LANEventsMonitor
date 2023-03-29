@@ -1,13 +1,17 @@
 import pyinotify
 from datetime import datetime
 from threading import Timer
+import os.path
 
 from utilities import threat_mgmt
 
 
 class EventHandler(pyinotify.ProcessEvent):
+    def __init__(self):
+        self.last_modified_time = None
+
     def process_IN_CREATE(self, event):
-        if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name or '~' in event.name:
+        if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or '~' in event.name:
             return
         
         if (event.name).isdigit():
@@ -21,7 +25,7 @@ class EventHandler(pyinotify.ProcessEvent):
         self.send_notif(notification)
 
     def process_IN_DELETE(self, event):
-        if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name or '~' in event.name:
+        if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or '~' in event.name:
             return
 
         if (event.name).isdigit():
@@ -32,6 +36,14 @@ class EventHandler(pyinotify.ProcessEvent):
         login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog']
         if event.name in login_logs:
             return
+
+        # Catch only if triggered in a limited time; prevents mass notifications from system logs
+        modified_time = os.path.getmtime(event.pathname)
+
+        if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
+            return
+
+        self.last_modified_time = modified_time
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
@@ -60,7 +72,7 @@ class EventHandler(pyinotify.ProcessEvent):
             lower_threat_timer.start()
 
     def process_IN_CLOSE_WRITE(self, event):
-        if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or "." in event.name or '~' in event.name:
+        if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or '~' in event.name:
             return
 
         if (event.name).isdigit():
@@ -71,6 +83,14 @@ class EventHandler(pyinotify.ProcessEvent):
         login_logs = ['btmp', 'utmp', 'wtmp', 'lastlog']
         if event.name in login_logs:
             return
+        
+        # Limit time
+        modified_time = os.path.getmtime(event.pathname)
+
+        if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
+            return
+
+        self.last_modified_time = modified_time
 
         # Change in file in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
