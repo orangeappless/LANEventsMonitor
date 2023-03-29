@@ -99,7 +99,7 @@ def start_server():
     
     secure_socket.listen()
     # print(f"Listening on port {port}...")
-    text_widget.insert(tk.END, f"Listening on port {port}...\n")
+    text_widget.insert(tk.END, f"Listening on port {port}...\n\n")
     text_widget.see(tk.END)
 
     # Accept incoming connections
