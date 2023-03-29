@@ -102,12 +102,14 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                             socket.sendall(threat_notification.encode('utf-8'))
 
                             # Passively lower threat
-                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_ssh', threat_file))
-                            passive_lower.start()
+                            if int(passive_lower_time) > 0:
+                                passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_ssh', threat_file))
+                                passive_lower.start()
                         else:
                             # Passively lower threat
-                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_ssh', threat_file))
-                            passive_lower.start()
+                            if int(passive_lower_time) > 0:
+                                passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_ssh', threat_file))
+                                passive_lower.start()
 
                     elif data_attr['terminal'] == 'ssh' and data_attr['res'] == 'success' and data_attr['addr'] in failed_attempts:
                         # Clear threat level upon successful login

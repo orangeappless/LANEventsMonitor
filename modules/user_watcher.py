@@ -112,11 +112,13 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             socket.sendall(threat_notification.encode('utf-8'))
 
                             # Passively lower threat
-                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_add_wheel_user', threat_file))
-                            passive_lower.start()
-                            wheel_group_attempts -= 1
+                            if int(passive_lower_time) > 0:
+                                passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_add_wheel_user', threat_file))
+                                passive_lower.start()
+                                wheel_group_attempts -= 1
                         else:
                             # Passively lower threat only
-                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_add_wheel_user', threat_file))
-                            passive_lower.start()
-                            wheel_group_attempts -= 1
+                            if int(passive_lower_time) > 0:
+                                passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_add_wheel_user', threat_file))
+                                passive_lower.start()
+                                wheel_group_attempts -= 1
