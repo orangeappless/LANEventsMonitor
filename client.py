@@ -101,7 +101,7 @@ def main():
     user_watcher_audit = user_watcher_configs['log']
     user_watcher_thread = Thread(
         target=user_watcher.start_user_watcher,
-        args=(user_watcher_audit, secure_socket, user_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
+        args=(user_watcher_audit, secure_socket, user_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat, user_watcher_configs['passive_lower_time'])
     )
     thread_list.append(user_watcher_thread)
 
@@ -110,7 +110,7 @@ def main():
     root_watcher_audit = root_watcher_configs['log']
     root_watcher_thread = Thread(
         target=root_watcher.start_root_watcher,
-        args=(root_watcher_audit, secure_socket, root_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
+        args=(root_watcher_audit, secure_socket, root_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat, root_watcher_configs['passive_lower_time'])
     )
     thread_list.append(root_watcher_thread)
     
@@ -119,7 +119,7 @@ def main():
     ssh_watcher_audit = ssh_watcher_configs['log']
     ssh_watcher_thread = Thread(
         target=ssh_watcher.start_ssh_watcher,
-        args=(ssh_watcher_audit, secure_socket, ssh_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat)
+        args=(ssh_watcher_audit, secure_socket, ssh_watcher_configs['block_time'], threat_file, max_threat, mid_threat, default_threat, ssh_watcher_configs['passive_lower_time'])
     )
     thread_list.append(ssh_watcher_thread)
 
@@ -130,7 +130,7 @@ def main():
     unallowed_ports = firewalld_watcher_configs['unallowed_ports'].split(',')
     firewalld_watcher_thread = Thread(
         target=firewalld_watcher.start_firewalld_watcher,
-        args=(firewalld_watcher_audit, secure_socket, threat_file, unallowed_services, unallowed_ports, max_threat, mid_threat, default_threat)
+        args=(firewalld_watcher_audit, secure_socket, threat_file, unallowed_services, unallowed_ports, max_threat, mid_threat, default_threat, firewalld_watcher_configs['passive_lower_time'])
     )
     thread_list.append(firewalld_watcher_thread)
 

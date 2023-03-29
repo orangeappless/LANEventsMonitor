@@ -47,7 +47,7 @@ def remove_block_usermod_wheel(wheel_user, user, times_attempted, threat_file, s
     socket.sendall(unblock_notification.encode('utf-8'))
 
 
-def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, threat_mid, threat_default):
+def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, threat_mid, threat_default, passive_lower_time):
     wheel_group_attempts = 0
 
     file_size = os.stat(audit_log).st_size
@@ -80,7 +80,8 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                     current_threat_level = threat_mgmt.get_current_level(threat_file)
 
                     if current_threat_level >= int(threat_mid):
-                        socket.sendall(notification.encode('utf-8'))   
+                        socket.sendall(notification.encode('utf-8')) 
+  
                 # Check for additions to `wheel` group
                 elif new_data.startswith('type=USER_MGMT') and 'add-user-to-group' in new_data and 'grp="wheel"' in new_data:
                     data_attr = audit_parser.get_audit_attrs(new_data)
@@ -109,3 +110,13 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                             threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
+
+                            # Passively lower threat
+                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_add_wheel_user', threat_file))
+                            passive_lower.start()
+                            wheel_group_attempts -= 1
+                        else:
+                            # Passively lower threat only
+                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_add_wheel_user', threat_file))
+                            passive_lower.start()
+                            wheel_group_attempts -= 1

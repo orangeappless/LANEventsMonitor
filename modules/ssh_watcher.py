@@ -43,7 +43,7 @@ def remove_dict_entry(ip_addr):
     failed_attempts.pop(ip_addr)
 
 
-def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, threat_mid, threat_default):
+def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, threat_mid, threat_default, passive_lower_time):
     global failed_attempts
     failed_attempts = {}
 
@@ -100,6 +100,15 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                             threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
+
+                            # Passively lower threat
+                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_ssh', threat_file))
+                            passive_lower.start()
+                        else:
+                            # Passively lower threat
+                            passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_ssh', threat_file))
+                            passive_lower.start()
+
                     elif data_attr['terminal'] == 'ssh' and data_attr['res'] == 'success' and data_attr['addr'] in failed_attempts:
                         # Clear threat level upon successful login
                         threat_mgmt.update_threat('success_ssh', threat_file, failed_attempts[data_attr['addr']])
