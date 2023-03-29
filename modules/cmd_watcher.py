@@ -49,7 +49,7 @@ def block_blocked_cmds(blocked_cmds):
     print(f'facl rule automatically set for blocked cmds \"{blocked_cmds}\"')
 
 
-def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket, passive_lower_time):
+def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
     # setfacl -m u:username:--- /path/to/binary
     # setfacl -x u:username /path/to/binary
     for cmd in executed_cmds:
