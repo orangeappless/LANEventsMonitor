@@ -6,7 +6,16 @@ import argparse
 import socket
 import threading
 import ssl
+import tkinter as tk
+import os
 
+
+# Set up window
+root = tk.Tk()
+
+text_widget = tk.Text(root)
+text_widget.pack(fill=tk.BOTH, expand=True)
+text_widget.pack_propagate(False)
 
 thread_count = 0        # Track number of threads/clients
 
@@ -26,14 +35,15 @@ def parse_args():
     return args
 
 
-def create_ssl_socket(socket):
+def create_ssl_socket(socket_):
     certfile = 'certs/domain.crt'
     keyfile = 'certs/domain.key'
 
     context = ssl.SSLContext(ssl.PROTOCOL_TLS_SERVER)
     context.load_cert_chain(certfile, keyfile)
 
-    secure_socket = context.wrap_socket(socket, server_side=True)
+    secure_socket = context.wrap_socket(socket_, server_side=True)
+    secure_socket.setsockopt(socket.SOL_SOCKET, socket.SO_REUSEADDR, 1)
     # secure_socket.setblocking(0)
 
     return secure_socket
@@ -52,10 +62,14 @@ def handle_client(socket):
         if data:
             remote_client = socket.getpeername()[0]
             print(f'{remote_client} :: {data.decode("utf-8")}')
+            text_widget.insert(tk.END, f'{remote_client} :: {data.decode("utf-8")}\n')
+            text_widget.see(tk.END)
 
         if not data:
             thread_count -= 1
             print(f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)")
+            text_widget.insert(tk.END, f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)\n")
+            text_widget.see(tk.END)
             break
 
         # socket.sendall(str.encode(response))
@@ -63,7 +77,7 @@ def handle_client(socket):
     socket.close()
 
 
-def main():
+def start_server():
     # Parse arguments
     args = parse_args()
 
@@ -71,6 +85,7 @@ def main():
     socket_ = socket.socket()
 
     # Wrap socket in SSL wrapper
+    global secure_socket
     secure_socket = create_ssl_socket(socket_)
 
     host = ""
@@ -84,6 +99,8 @@ def main():
     
     secure_socket.listen()
     print(f"Listening on port {port}...")
+    text_widget.insert(tk.END, f"Listening on port {port}...\n")
+    text_widget.see(tk.END)
 
     # Accept incoming connections
     while True:
@@ -91,6 +108,8 @@ def main():
             client, addr = secure_socket.accept()
             thread_count += 1
             print(f"{addr[0]} :: connected, {thread_count} current client(s)")
+            text_widget.insert(tk.END, f"{addr[0]} :: connected, {thread_count} current client(s)\n")
+            text_widget.see(tk.END)
             threading.Thread(target=handle_client, args=(client, )).start()
         except KeyboardInterrupt:
             print("Keyboard interrupt")
@@ -98,6 +117,37 @@ def main():
             break
 
     secure_socket.close()
+    os._exit(0)
+
+
+def start_server_thread():
+    # Disable button once server starts
+    start_button.config(state='disabled')
+
+    server_thread = threading.Thread(target=start_server)
+    server_thread.start()
+
+
+def stop_server():
+    root.destroy()
+
+    try:
+        secure_socket.close()
+    except:
+        pass
+
+    os._exit(0)
+
+
+def main():
+    global start_button
+    start_button = tk.Button(root, text="Start Server", command=start_server_thread)
+    start_button.pack()
+
+    stop_button = tk.Button(root, text="Stop Server", command=stop_server)
+    stop_button.pack()
+
+    root.mainloop()
 
 
 if __name__ == "__main__":
