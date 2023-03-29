@@ -62,14 +62,14 @@ def handle_client(socket):
 
         if data:
             remote_client = socket.getpeername()[0]
-            print(f'{remote_client} :: {data.decode("utf-8")}')
+            # print(f'{remote_client} :: {data.decode("utf-8")}')
             text_widget.insert(tk.END, f'{remote_client} :: {data.decode("utf-8")}\n')
             text_widget.see(tk.END)
 
         if not data:
             thread_count -= 1
             connected_clients.remove(socket)
-            print(f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)")
+            # print(f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)")
             text_widget.insert(tk.END, f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)\n")
             text_widget.see(tk.END)
             break
@@ -98,7 +98,7 @@ def start_server():
         print(str(e))
     
     secure_socket.listen()
-    print(f"Listening on port {port}...")
+    # print(f"Listening on port {port}...")
     text_widget.insert(tk.END, f"Listening on port {port}...\n")
     text_widget.see(tk.END)
 
@@ -108,7 +108,7 @@ def start_server():
             client, addr = secure_socket.accept()
             connected_clients.append(client)
             thread_count += 1
-            print(f"{addr[0]} :: connected, {thread_count} current client(s)")
+            # print(f"{addr[0]} :: connected, {thread_count} current client(s)")
             text_widget.insert(tk.END, f"{addr[0]} :: connected, {thread_count} current client(s)\n")
             text_widget.see(tk.END)
             
