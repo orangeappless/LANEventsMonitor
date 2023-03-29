@@ -12,6 +12,7 @@ import os
 
 # Set up window
 root = tk.Tk()
+root.title('LAN Events Monitor')
 
 text_widget = tk.Text(root)
 text_widget.pack(fill=tk.BOTH, expand=True)
@@ -106,6 +107,7 @@ def start_server():
     while True:
         try:
             client, addr = secure_socket.accept()
+            print(client, addr)
             thread_count += 1
             print(f"{addr[0]} :: connected, {thread_count} current client(s)")
             text_widget.insert(tk.END, f"{addr[0]} :: connected, {thread_count} current client(s)\n")
@@ -129,13 +131,12 @@ def start_server_thread():
 
 
 def stop_server():
-    root.destroy()
-
     try:
         secure_socket.close()
     except:
         pass
 
+    root.destroy()
     os._exit(0)
 
 
@@ -146,6 +147,8 @@ def main():
 
     stop_button = tk.Button(root, text="Stop Server", command=stop_server)
     stop_button.pack()
+
+    root.protocol('WM_DELETE_WINDOW', stop_server)
 
     root.mainloop()
 
