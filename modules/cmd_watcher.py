@@ -3,7 +3,6 @@ import os
 import subprocess
 from threading import Timer
 
-from utilities import audit_parser
 from utilities import threat_mgmt
 
 
@@ -50,7 +49,7 @@ def block_blocked_cmds(blocked_cmds):
     print(f'facl rule automatically set for blocked cmds \"{blocked_cmds}\"')
 
 
-def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
+def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket, passive_lower_time):
     # setfacl -m u:username:--- /path/to/binary
     # setfacl -x u:username /path/to/binary
     for cmd in executed_cmds:
@@ -58,8 +57,8 @@ def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
         block_cmd = ['setfacl', '-m', f'u:{user}:---', f'{cmd}']
         exec_block_cmd = subprocess.run(block_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-    block_notification = f"[{time_of_block}] possible INCIDENT, blocking watchlisted command(s) for {user}"
+    time_of_block = datetime.now().strftime("%Y-%m-%d %H:%M")
+    block_notification = f"[{time_of_block}] possible INCIDENT, blocking watchlisted command(s) for \"{user}\""
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
@@ -70,7 +69,7 @@ def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
 
 
 def unblock_watched_cmds(executed_cmds, user, threat_file, socket):
-    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+    time_of_unblock = datetime.now().strftime("%Y-%m-%d %H:%M")
     unblock_notification = f"[{time_of_unblock}] unblocking watchlisted command(s) for {user}"
 
     for cmd in executed_cmds:
@@ -83,7 +82,7 @@ def unblock_watched_cmds(executed_cmds, user, threat_file, socket):
     socket.sendall(unblock_notification.encode('utf-8'))
 
 
-def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds, threat_max, threat_mid, threat_default, block_time):
+def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds, threat_max, threat_mid, threat_default, block_time, passive_lower_time):
     init_auditd_rules(blocked_cmds, 'blocked-cmd')
     init_auditd_rules(watched_cmds, 'watched-cmd')
 
@@ -101,7 +100,7 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
             new_data = log_file.read()
 
             if new_data:
-                current_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
+                current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
 
                 if 'watched-cmd' in new_data:
                     new_data = new_data.split('type=')
@@ -133,13 +132,17 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
                         threat_mgmt.update_threat('exec_watched_cmd', threat_file)
                         executed_watched_cmds.append(syscall_attrs['exe'])
 
+                        notification = f"[{current_time}] watchlisted command `{syscall_attrs['exe']}` executed by \"{syscall_attrs['UID']}\""
+                        print(notification)
+
                         current_threat_level = threat_mgmt.get_current_level(threat_file)
 
-                        if current_threat_level >= int(threat_max):
-                            # Undo previous firewall rule and block firewall-cmd command
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MAX THREAT LEVEL ({threat_max}), possible INCIDENT'
+                        if current_threat_level >= int(threat_mid):
+                            socket.sendall(notification.encode('utf-8'))
 
+                        if current_threat_level >= int(threat_max):
+                            # Block command
+                            threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
 
@@ -147,8 +150,18 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
                             executed_watched_cmds = []
                         elif current_threat_level >= int(threat_mid):
                             # Only send alert of event if mid level threat
-                            threat_time = datetime.now().strftime("%Y-%m-%d %H:%M:%S")
-                            threat_notification = f'[{threat_time}] system at MEDIUM THREAT LEVEL ({threat_mid})'
-
+                            threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
-                            socket.sendall(threat_notification.encode('utf-8'))                    
+                            socket.sendall(threat_notification.encode('utf-8'))
+
+                            # Lower threat generated by this action after some time
+                            if int(passive_lower_time) > 0:
+                                passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_exec_watched_cmd', threat_file))
+                                passive_lower.start()
+                                executed_watched_cmds.remove(syscall_attrs['exe'])
+                        else:
+                            # At low threat levels, only passively lower threat
+                            if int(passive_lower_time) > 0:
+                                passive_lower = Timer(int(passive_lower_time), threat_mgmt.update_threat, args=('clear_exec_watched_cmd', threat_file))
+                                passive_lower.start()
+                                executed_watched_cmds.remove(syscall_attrs['exe'])
