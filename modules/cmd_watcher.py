@@ -130,12 +130,12 @@ def start_cmd_watcher(audit_log, socket, threat_file, blocked_cmds, watched_cmds
                     # Handle threat level
                     if syscall_attrs['exe'] != '/usr/bin/bash':
                         threat_mgmt.update_threat('exec_watched_cmd', threat_file)
+                        current_threat_level = threat_mgmt.get_current_level(threat_file)
+                        action_threat = threat_mgmt.get_action_levels()['exec_watched_cmd']
                         executed_watched_cmds.append(syscall_attrs['exe'])
 
-                        notification = f"[{current_time}] watchlisted command `{syscall_attrs['exe']}` executed by \"{syscall_attrs['UID']}\""
+                        notification = f"[{current_time}] watchlisted command `{syscall_attrs['exe']}` executed by \"{syscall_attrs['UID']}\" ::: +{action_threat} [{current_threat_level}]"
                         print(notification)
-
-                        current_threat_level = threat_mgmt.get_current_level(threat_file)
 
                         if current_threat_level >= int(threat_mid):
                             socket.sendall(notification.encode('utf-8'))
