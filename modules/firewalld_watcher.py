@@ -26,7 +26,7 @@ def init_auditd_rule(auditd_rule):
     auditd_cmd = auditd_rule_split
     exec_cmd = subprocess.run(auditd_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
 
-    print('auditd watch for firewalld_watcher created')
+    # print('auditd watch for firewalld_watcher created')
 
 
 def undo_firewalld_rule(added_services, threat_file, socket):
