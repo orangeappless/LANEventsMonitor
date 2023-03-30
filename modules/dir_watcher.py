@@ -37,13 +37,13 @@ class EventHandler(pyinotify.ProcessEvent):
         if event.name in login_logs:
             return
 
-        # Catch only if triggered in a limited time; prevents mass notifications from system logs
-        modified_time = os.path.getmtime(event.pathname)
+        # # Catch only if triggered in a limited time; prevents mass notifications from system logs
+        # modified_time = os.path.getmtime(event.pathname)
 
-        if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
-            return
+        # if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
+        #     return
 
-        self.last_modified_time = modified_time
+        # self.last_modified_time = modified_time
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
