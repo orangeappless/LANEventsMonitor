@@ -22,10 +22,10 @@ def init_auditd_rules(cmds_to_add, type):
         auditd_cmd = ['auditctl', '-w', f'{binary}', '-p', 'x', '-k', f'{type}']
         exec_auditd_cmd = subprocess.run(auditd_cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
-    if type == 'blocked-cmd':
-        print(f'audid watches for blocked cmds \"{cmds_to_add}\" created')
-    else:
-        print(f'audid watches for watched cmds \"{cmds_to_add}\" created')
+    # if type == 'blocked-cmd':
+    #     print(f'audid watches for blocked cmds \"{cmds_to_add}\" created')
+    # else:
+    #     print(f'audid watches for watched cmds \"{cmds_to_add}\" created')
 
 
 def block_blocked_cmds(blocked_cmds):
@@ -45,8 +45,8 @@ def block_blocked_cmds(blocked_cmds):
         cmd = ['setfacl', '-m', 'o::---', f'{binary}']
         exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
     
-    # print(binaries)
-    print(f'facl rule automatically set for blocked cmds \"{blocked_cmds}\"')
+    # # print(binaries)
+    # print(f'facl rule automatically set for blocked cmds \"{blocked_cmds}\"')
 
 
 def block_watched_cmds(executed_cmds, user, block_time, threat_file, socket):
