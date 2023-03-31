@@ -91,7 +91,7 @@ def handle_client(socket):
             thread_count -= 1
             connected_clients.remove(socket)
             notification = f'{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)\n'
-            text_widget.insert(tk.END, )
+            text_widget.insert(tk.END, notification)
             text_widget.see(tk.END)
             log_notif(notification)
             break

@@ -3,6 +3,7 @@ import os
 import subprocess
 from threading import Timer
 
+from utilities import logger
 from utilities import audit_parser
 from utilities import threat_mgmt
 
@@ -17,6 +18,7 @@ def lock_created_users(created_users, block_time, threat_file, socket):
     
     print(lock_notification)
     socket.sendall(lock_notification.encode('utf-8'))
+    logger.logger(lock_notification)
 
     for user in created_users:
         lock_user = ['passwd', '-l' f'{user}']
@@ -41,6 +43,7 @@ def unlock_created_users(created_users, threat_file, socket):
 
     print(unlock_notification)
     socket.sendall(unlock_notification.encode('utf-8'))
+    logger.logger(unlock_notification)
 
 
 def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file, socket):
@@ -53,6 +56,7 @@ def block_usermod_wheel(wheel_user, user, block_time, times_failed, threat_file,
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
+    logger.logger(block_notification)
 
     # Lock newly-added `wheel` user
     lock_user_cmd = ['passwd', '-l', f'{wheel_user}']
@@ -81,6 +85,7 @@ def remove_block_usermod_wheel(wheel_user, user, times_attempted, threat_file, s
 
     print(unblock_notification)
     socket.sendall(unblock_notification.encode('utf-8'))
+    logger.logger(unblock_notification)
 
 
 def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, threat_mid, threat_default, passive_lower_time):
@@ -114,12 +119,15 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                     if current_threat_level >= int(threat_mid):
                         socket.sendall(notification.encode('utf-8'))
 
+                    logger.logger(notification)
+
                     # Lock newly-created user if at max threat-level
                     if current_threat_level >= int(threat_max):
                         threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                         print(threat_notification)
                         socket.sendall(threat_notification.encode('utf-8'))
-    
+                        logger.logger(threat_notification)
+
                         # Block user
                         lock_created_users(created_users, block_time, threat_file, socket)
                         created_users = []
@@ -127,6 +135,7 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                         threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                         print(threat_notification)
                         socket.sendall(threat_notification.encode('utf-8'))
+                        logger.logger(threat_notification)
 
                         # Passively lower threat if enabled
                         if int(passive_lower_time) > 0:
@@ -149,7 +158,9 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
 
                     if current_threat_level >= int(threat_mid):
                         socket.sendall(notification.encode('utf-8')) 
-  
+                    
+                    logger.logger(notification)
+
                 # Check for additions to `wheel` group
                 elif new_data.startswith('type=USER_MGMT') and 'add-user-to-group' in new_data and 'grp="wheel"' in new_data:
                     data_attr = audit_parser.get_audit_attrs(new_data)
@@ -166,17 +177,21 @@ def start_user_watcher(audit_log, socket, block_time, threat_file, threat_max, t
                         if current_threat_level >= int(threat_mid):
                             socket.sendall(notification.encode('utf-8'))
 
+                        logger.logger(notification)
+
                         if current_threat_level >= int(threat_max):
                             threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
-        
+                            logger.logger(threat_notification)
+
                             block_usermod_wheel(data_attr['acct'], data_attr['UID'], block_time, wheel_group_attempts, threat_file, socket)
                             wheel_group_attempts = 0
                         elif current_threat_level >= int(threat_mid):
                             threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
+                            logger.logger(threat_notification)
 
                             # Passively lower threat
                             if int(passive_lower_time) > 0:
