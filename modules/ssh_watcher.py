@@ -3,6 +3,7 @@ import os
 import subprocess
 from threading import Timer
 
+from utilities import logger
 from utilities import audit_parser
 from utilities import threat_mgmt
 
@@ -17,6 +18,7 @@ def block_addr(ip_addr, block_time, socket):
     
     print(block_notification)
     socket.sendall(block_notification.encode('utf-8'))
+    logger.logger(block_notification)
 
     cmd = ['iptables', '-A', 'INPUT', '-s', ip_addr, '-j', 'DROP']
     exec_cmd = subprocess.run(cmd, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
@@ -37,6 +39,7 @@ def remove_rule(ip_addr, socket, threat_file):
 
     print(unblock_notification)
     socket.sendall(unblock_notification.encode('utf-8'))
+    logger.logger(unblock_notification)
 
 
 def remove_dict_entry(ip_addr):
@@ -83,11 +86,14 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                         if current_threat_level >= int(threat_mid):
                             socket.sendall(notification.encode('utf-8'))
 
+                        logger.logger(notification)
+
                         if current_threat_level >= int(threat_max):
                             # Block IP if max level threat
                             threat_notification = threat_mgmt.create_max_threat_notif(threat_max, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
+                            logger.logger(threat_notification)
 
                             block_addr(data_attr['addr'], block_time, socket)
 
@@ -100,6 +106,7 @@ def start_ssh_watcher(log_file, socket, block_time, threat_file, threat_max, thr
                             threat_notification = threat_mgmt.create_mid_threat_notif(threat_mid, current_threat_level)
                             print(threat_notification)
                             socket.sendall(threat_notification.encode('utf-8'))
+                            logger.logger(threat_notification)
 
                             # Passively lower threat
                             if int(passive_lower_time) > 0:

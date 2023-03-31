@@ -7,6 +7,9 @@ import socket
 import threading
 import ssl
 import tkinter as tk
+from datetime import datetime
+import logging
+from pathlib import Path
 
 
 # Set up window
@@ -19,6 +22,22 @@ text_widget.pack_propagate(False)
 
 thread_count = 0        # Track number of threads/clients
 connected_clients = []  # Stores clients
+
+
+def log_notif(info):
+    # Configure log name
+    log_path = 'logs/'
+    current_date = datetime.now().strftime('%Y-%m-%d')  
+    log_name = f'{log_path}/srv_{current_date}.log'
+
+    # Create log if it doesn't exist
+    log_file = Path(f'{log_name}')
+    log_file.parent.mkdir(exist_ok=True, parents=True)
+    #filename.touch(exist_ok=True)
+
+    # Log info
+    logging.basicConfig(filename=log_name, level=logging.INFO)
+    logging.info(info)
 
 
 def parse_args():
@@ -63,15 +82,18 @@ def handle_client(socket):
         if data:
             remote_client = socket.getpeername()[0]
             # print(f'{remote_client} :: {data.decode("utf-8")}')
-            text_widget.insert(tk.END, f'{remote_client} :: {data.decode("utf-8")}\n')
+            notification = f'{remote_client} :: {data.decode("utf-8")}\n'
+            text_widget.insert(tk.END, notification)
             text_widget.see(tk.END)
+            log_notif(notification)
 
         if not data:
             thread_count -= 1
             connected_clients.remove(socket)
-            # print(f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)")
-            text_widget.insert(tk.END, f"{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)\n")
+            notification = f'{socket.getpeername()[0]} :: disconnected, {thread_count} current client(s)\n'
+            text_widget.insert(tk.END, notification)
             text_widget.see(tk.END)
+            log_notif(notification)
             break
 
     socket.close()
@@ -101,6 +123,7 @@ def start_server():
     # print(f"Listening on port {port}...")
     text_widget.insert(tk.END, f"Listening on port {port}...\n")
     text_widget.see(tk.END)
+    log_notif(f"Listening on port {port}...\n")
 
     # Accept incoming connections
     while True:
@@ -109,8 +132,10 @@ def start_server():
             connected_clients.append(client)
             thread_count += 1
             # print(f"{addr[0]} :: connected, {thread_count} current client(s)")
-            text_widget.insert(tk.END, f"{addr[0]} :: connected, {thread_count} current client(s)\n")
+            notification = f'{addr[0]} :: connected, {thread_count} current client(s)\n'
+            text_widget.insert(tk.END, notification)
             text_widget.see(tk.END)
+            log_notif(notification)
             
             threading.Thread(target=handle_client, args=(client, )).start()
         except KeyboardInterrupt:

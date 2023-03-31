@@ -3,6 +3,7 @@ from datetime import datetime
 from threading import Timer
 import os.path
 
+from utilities import logger
 from utilities import threat_mgmt
 
 
@@ -37,13 +38,13 @@ class EventHandler(pyinotify.ProcessEvent):
         if event.name in login_logs:
             return
 
-        # Catch only if triggered in a limited time; prevents mass notifications from system logs
-        modified_time = os.path.getmtime(event.pathname)
+        # # Catch only if triggered in a limited time; prevents mass notifications from system logs
+        # modified_time = os.path.getmtime(event.pathname)
 
-        if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
-            return
+        # if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
+        #     return
 
-        self.last_modified_time = modified_time
+        # self.last_modified_time = modified_time
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
@@ -60,15 +61,19 @@ class EventHandler(pyinotify.ProcessEvent):
         if current_threat_level >= int(mid_threat):
             self.send_notif(notification)
 
+        logger.logger(notification)
+
         if current_threat_level >= int(max_threat):
             threat_notification = threat_mgmt.create_max_threat_notif(max_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
+            logger.logger(threat_notification)
         elif current_threat_level >= int(mid_threat):
             threat_notification = threat_mgmt.create_mid_threat_notif(mid_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
-    
+            logger.logger(threat_notification)
+
             lower_threat_timer = Timer(int(block_time), self.lower_threat)
             lower_threat_timer.start()
 
@@ -108,14 +113,18 @@ class EventHandler(pyinotify.ProcessEvent):
         if current_threat_level >= int(mid_threat):
             self.send_notif(notification)
 
+        logger.logger(notification)
+
         if current_threat_level >= int(max_threat):
             threat_notification = threat_mgmt.create_max_threat_notif(max_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
+            logger.logger(threat_notification)
         elif current_threat_level >= int(mid_threat):
             threat_notification = threat_mgmt.create_mid_threat_notif(mid_threat, current_threat_level)
             print(threat_notification)
             socket_.sendall(threat_notification.encode('utf-8'))
+            logger.logger(threat_notification)
 
         if int(block_time) > 0:
             lower_threat_timer = Timer(int(block_time), self.lower_threat)
@@ -134,6 +143,7 @@ class EventHandler(pyinotify.ProcessEvent):
         notification = f'[{current_time}] threat from directory modification/deletion lowered ::: {action_threat} [{current_threat_level}]'
         print(notification)
         socket_.sendall(notification.encode('utf-8'))
+        logger.logger(notification)
 
 
 def start_watcher(directories, socket, time_block, threat_file, threat_max, threat_mid, threat_default):

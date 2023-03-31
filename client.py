@@ -10,6 +10,8 @@ import subprocess
 from pathlib import Path
 import time
 
+from utilities import logger
+
 from modules import dir_watcher
 from modules import user_watcher
 from modules import root_watcher
@@ -75,6 +77,7 @@ def main():
     port = int(dict(configs.items('CLIENT_CONF'))['server_port'])
 
     print("Connecting...")
+    logger.logger('Connecting...')
 
     try:
         secure_socket.connect((server, port))
@@ -84,6 +87,7 @@ def main():
     # Confirm connection to server
     res = secure_socket.recv(4096)
     print(res.decode("utf-8"))
+    logger.logger(res.decode("utf-8"))
 
     # List to store processes for each monitoring module
     thread_list = []
@@ -156,10 +160,12 @@ def main():
 
         if data.decode('utf-8') == '$SHUTDOWN':
             print('\nshutdown signal received, exiting...')
+            logger.logger('shutdown signal received, exiting...')
             secure_socket.close()
             break
         elif not data:
             print('\nunexpected server shutdown, exiting...')
+            logger.logger('unexpected server shutdown, exiting...')
             secure_socket.close()
             break
 
@@ -172,4 +178,5 @@ if __name__ == "__main__":
         main()
     except KeyboardInterrupt:
         print("Exiting program...")
+        logger.logger('Exiting program...')
         os._exit(0)
