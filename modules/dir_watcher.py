@@ -1,5 +1,5 @@
 import pyinotify
-from datetime import datetime
+from datetime import datetime, timedelta
 from threading import Timer
 import os.path
 
@@ -9,7 +9,7 @@ from utilities import threat_mgmt
 
 class EventHandler(pyinotify.ProcessEvent):
     def __init__(self):
-        self.last_modified_time = None
+        self.last_trigger_time = None
 
     def process_IN_CREATE(self, event):
         if "swp" in event.name or "swpx" in event.name or ".part" in event.name or event.name[-1] == "+" or event.name[-1] == "-" or ".lock" in event.name or '~' in event.name:
@@ -38,13 +38,13 @@ class EventHandler(pyinotify.ProcessEvent):
         if event.name in login_logs:
             return
 
-        # # Catch only if triggered in a limited time; prevents mass notifications from system logs
-        # modified_time = os.path.getmtime(event.pathname)
+        # Catch only if triggered in a limited time; prevents mass notifications from system logs
+        trigger_time = datetime.now()
 
-        # if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
-        #     return
+        if self.last_trigger_time is not None and trigger_time - self.last_trigger_time < timedelta(seconds=3):
+            return
 
-        # self.last_modified_time = modified_time
+        self.last_trigger_time = trigger_time
 
         # Deletion in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")  
@@ -74,6 +74,7 @@ class EventHandler(pyinotify.ProcessEvent):
             socket_.sendall(threat_notification.encode('utf-8'))
             logger.logger(threat_notification)
 
+        if int(block_time) > 0:
             lower_threat_timer = Timer(int(block_time), self.lower_threat)
             lower_threat_timer.start()
 
@@ -91,12 +92,12 @@ class EventHandler(pyinotify.ProcessEvent):
             return
         
         # Limit time
-        modified_time = os.path.getmtime(event.pathname)
+        trigger_time = datetime.now()
 
-        if self.last_modified_time is not None and modified_time - self.last_modified_time < 3:
+        if self.last_trigger_time is not None and trigger_time - self.last_trigger_time < timedelta(seconds=3):
             return
 
-        self.last_modified_time = modified_time
+        self.last_trigger_time = trigger_time
 
         # Change in file in directory
         current_time = datetime.now().strftime("%Y-%m-%d %H:%M")
